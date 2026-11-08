@@ -1,0 +1,82 @@
+<template>
+  <div v-if="modelValue" class="modal" role="dialog" aria-modal="true">
+    <div class="modal__backdrop" @click="close"></div>
+    <div class="modal__panel">
+      <header class="modal__header">
+        <h3>{{ title }}</h3>
+        <button class="modal__close" type="button" aria-label="Закрыть" @click="close">×</button>
+      </header>
+      <div class="modal__body">
+        <slot />
+      </div>
+      <footer v-if="$slots.footer" class="modal__footer">
+        <slot name="footer" />
+      </footer>
+    </div>
+  </div>
+</template>
+
+<script setup>
+const props = defineProps({
+  modelValue: { type: Boolean, default: false },
+  title: { type: String, default: '' },
+});
+
+const emit = defineEmits(['update:modelValue']);
+
+function close() {
+  emit('update:modelValue', false);
+}
+</script>
+
+<style scoped>
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+}
+
+.modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 7, 12, 0.65);
+}
+
+.modal__panel {
+  position: relative;
+  width: min(480px, calc(100% - 32px));
+  background: var(--ls-bg-elevated);
+  border: 1px solid var(--ls-border);
+  border-radius: var(--ls-radius-lg);
+  padding: var(--ls-space-4);
+}
+
+.modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--ls-space-3);
+}
+
+.modal__header h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.modal__close {
+  border: none;
+  background: transparent;
+  color: var(--ls-text-muted);
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.modal__footer {
+  margin-top: var(--ls-space-4);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--ls-space-2);
+}
+</style>

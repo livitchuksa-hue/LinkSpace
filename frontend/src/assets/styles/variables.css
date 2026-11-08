@@ -1,0 +1,44 @@
+:root {
+  /* Brand / surfaces */
+  --ls-bg: #0f1115;
+  --ls-bg-elevated: #161a22;
+  --ls-bg-panel: #12161e;
+  --ls-bg-soft: #1a2030;
+  --ls-border: #2a3142;
+  --ls-border-subtle: #222836;
+
+  /* Text */
+  --ls-text: #e8ecf4;
+  --ls-text-muted: #9aa3b5;
+  --ls-text-dim: #6b7385;
+
+  /* Accent */
+  --ls-accent: #4f8cff;
+  --ls-accent-hover: #6aa0ff;
+  --ls-accent-soft: rgba(79, 140, 255, 0.16);
+  --ls-success: #3ecf8e;
+  --ls-danger: #ff6b7a;
+
+  /* Spacing */
+  --ls-space-1: 4px;
+  --ls-space-2: 8px;
+  --ls-space-3: 12px;
+  --ls-space-4: 16px;
+  --ls-space-5: 24px;
+  --ls-space-6: 32px;
+  --ls-space-7: 48px;
+
+  /* Radius */
+  --ls-radius-sm: 6px;
+  --ls-radius-md: 10px;
+  --ls-radius-lg: 16px;
+
+  /* Layout */
+  --ls-header-height: 56px;
+  --ls-sidebar-width: 240px;
+  --ls-inspector-width: 280px;
+
+  /* Typography */
+  --ls-font: "Segoe UI", "Candara", "Trebuchet MS", sans-serif;
+  --ls-font-display: "Segoe UI Semibold", "Segoe UI", sans-serif;
+}

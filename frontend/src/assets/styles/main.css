@@ -1,0 +1,52 @@
+@import "./variables.css";
+@import "./reset.css";
+
+body {
+  background:
+    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(79, 140, 255, 0.12), transparent 55%),
+    radial-gradient(ellipse 60% 40% at 90% 10%, rgba(62, 207, 142, 0.06), transparent 50%),
+    var(--ls-bg);
+}
+
+.app-shell {
+  display: grid;
+  grid-template-rows: var(--ls-header-height) 1fr;
+  height: 100%;
+  min-height: 100%;
+}
+
+.app-body {
+  display: grid;
+  grid-template-columns: var(--ls-sidebar-width) 1fr var(--ls-inspector-width);
+  min-height: 0;
+  border-top: 1px solid var(--ls-border-subtle);
+}
+
+.panel {
+  background: var(--ls-bg-panel);
+  border-right: 1px solid var(--ls-border-subtle);
+  min-height: 0;
+  overflow: auto;
+}
+
+.panel--right {
+  border-right: none;
+  border-left: 1px solid var(--ls-border-subtle);
+}
+
+.workspace {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(22, 26, 34, 0.35), transparent 40%),
+    var(--ls-bg);
+}
+
+.muted {
+  color: var(--ls-text-muted);
+}
+
+.dim {
+  color: var(--ls-text-dim);
+}
