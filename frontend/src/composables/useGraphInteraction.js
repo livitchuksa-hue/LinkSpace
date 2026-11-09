@@ -1,4 +1,4 @@
-import { reactive } from 'vue';
+import { onBeforeUnmount, reactive } from 'vue';
 import { clamp, clientToWorld, nodeCenter, pointInPolygon, smoothOpenPath } from '../utils/graphGeometry';
 import { graphStore } from '../stores/graphStore';
 import { uiStore } from '../stores/uiStore';
@@ -67,6 +67,7 @@ function parseRegionPoints(coordinates) {
  * Панорамирование, масштаб, перетаскивание узлов и областей, рисование областей.
  */
 export function useGraphInteraction({ onMoveEnd, onResizeEnd, onRegionComplete, onRegionMoveEnd }) {
+  onBeforeUnmount(cancelInertia);
   const interaction = reactive({
     mode: null,
     nodeId: null,
@@ -83,13 +84,46 @@ export function useGraphInteraction({ onMoveEnd, onResizeEnd, onRegionComplete, 
     regionPoints: [],
     regionShape: 'polygon',
     moved: false,
+    panTrail: [],
+    inertiaRaf: null,
+    inertiaV: { x: 0, y: 0 },
   });
+
+  function cancelInertia() {
+    if (interaction.inertiaRaf != null) {
+      cancelAnimationFrame(interaction.inertiaRaf);
+      interaction.inertiaRaf = null;
+    }
+    interaction.inertiaV = { x: 0, y: 0 };
+  }
+
+  function startInertia(vx, vy) {
+    cancelInertia();
+    interaction.inertiaV = { x: vx, y: vy };
+    let last = performance.now();
+    const step = (now) => {
+      const dt = Math.min(64, now - last);
+      last = now;
+      const decay = Math.exp(-dt / 140);
+      interaction.inertiaV.x *= decay;
+      interaction.inertiaV.y *= decay;
+      graphStore.view.x += interaction.inertiaV.x * dt;
+      graphStore.view.y += interaction.inertiaV.y * dt;
+      if (Math.hypot(interaction.inertiaV.x, interaction.inertiaV.y) < 0.03) {
+        interaction.inertiaRaf = null;
+        return;
+      }
+      interaction.inertiaRaf = requestAnimationFrame(step);
+    };
+    interaction.inertiaRaf = requestAnimationFrame(step);
+  }
 
   function getRect(element) {
     return element.getBoundingClientRect();
   }
 
   function onWheel(event, root) {
+    cancelInertia();
     const rect = getRect(root);
     const world = clientToWorld(event.clientX, event.clientY, rect, graphStore.view);
     const factor = event.deltaY > 0 ? 0.92 : 1.08;
@@ -104,9 +138,11 @@ export function useGraphInteraction({ onMoveEnd, onResizeEnd, onRegionComplete, 
   }
 
   function startPanFrom(point) {
+    cancelInertia();
     interaction.mode = 'pan';
     interaction.startClient = { x: point.x, y: point.y };
     interaction.startView = { x: graphStore.view.x, y: graphStore.view.y };
+    interaction.panTrail = [{ x: point.x, y: point.y, t: performance.now() }];
     interaction.moved = true;
   }
 
@@ -114,6 +150,7 @@ export function useGraphInteraction({ onMoveEnd, onResizeEnd, onRegionComplete, 
     if (uiStore.tool === 'connect' || uiStore.tool === 'region') {
       return;
     }
+    cancelInertia();
     interaction.mode = 'drag-node';
     interaction.nodeId = node.id;
     interaction.startClient = { x: event.clientX, y: event.clientY };
@@ -125,6 +162,7 @@ export function useGraphInteraction({ onMoveEnd, onResizeEnd, onRegionComplete, 
     if (uiStore.tool !== 'select') {
       return;
     }
+    cancelInertia();
     interaction.mode = 'resize-node';
     interaction.nodeId = node.id;
     interaction.startClient = { x: event.clientX, y: event.clientY };
@@ -141,6 +179,7 @@ export function useGraphInteraction({ onMoveEnd, onResizeEnd, onRegionComplete, 
     }
     const points = parseRegionPoints(region.coordinates);
     if (!points.length) return;
+    cancelInertia();
     interaction.mode = 'drag-region';
     interaction.regionId = region.id;
     interaction.startClient = { x: event.clientX, y: event.clientY };
@@ -156,6 +195,7 @@ export function useGraphInteraction({ onMoveEnd, onResizeEnd, onRegionComplete, 
     const points = parseRegionPoints(region.coordinates);
     const vertex = points[index];
     if (!vertex) return;
+    cancelInertia();
     interaction.mode = 'region-vertex';
     interaction.regionId = region.id;
     interaction.regionHandleIndex = index;
@@ -176,6 +216,7 @@ export function useGraphInteraction({ onMoveEnd, onResizeEnd, onRegionComplete, 
     const nextPoints = [...points];
     nextPoints.splice(edgeIndex + 1, 0, midpoint);
     updateRegionPoints(region.id, nextPoints);
+    cancelInertia();
     interaction.mode = 'region-vertex';
     interaction.regionId = region.id;
     interaction.regionHandleIndex = edgeIndex + 1;
@@ -193,6 +234,7 @@ export function useGraphInteraction({ onMoveEnd, onResizeEnd, onRegionComplete, 
     const ys = points.map((point) => point.y);
     const minX = Math.min(...xs);
     const minY = Math.min(...ys);
+    cancelInertia();
     interaction.mode = 'region-resize';
     interaction.regionId = region.id;
     interaction.startClient = { x: event.clientX, y: event.clientY };
@@ -208,6 +250,7 @@ export function useGraphInteraction({ onMoveEnd, onResizeEnd, onRegionComplete, 
 
   function addRegionPoint(event, root) {
     if (uiStore.tool !== 'region') return;
+    cancelInertia();
     const world = clientToWorld(event.clientX, event.clientY, getRect(root), graphStore.view);
 
     if (interaction.mode !== 'region-points') {
@@ -296,6 +339,12 @@ export function useGraphInteraction({ onMoveEnd, onResizeEnd, onRegionComplete, 
     if (interaction.mode === 'pan') {
       graphStore.view.x = interaction.startView.x + dx;
       graphStore.view.y = interaction.startView.y + dy;
+      const now = performance.now();
+      interaction.panTrail.push({ x: event.clientX, y: event.clientY, t: now });
+      while (interaction.panTrail.length > 2
+          && now - interaction.panTrail[0].t > 120) {
+        interaction.panTrail.shift();
+      }
       return;
     }
 
@@ -371,7 +420,21 @@ export function useGraphInteraction({ onMoveEnd, onResizeEnd, onRegionComplete, 
 
   async function onPointerUp() {
     if (interaction.mode === 'pan') {
+      const trail = interaction.panTrail;
+      if (trail.length >= 2) {
+        const first = trail[0];
+        const last = trail[trail.length - 1];
+        const dt = last.t - first.t;
+        if (dt > 8) {
+          const vx = (last.x - first.x) / dt;
+          const vy = (last.y - first.y) / dt;
+          if (Math.hypot(vx, vy) > 0.08) {
+            startInertia(vx, vy);
+          }
+        }
+      }
       interaction.mode = null;
+      interaction.panTrail = [];
       interaction.moved = false;
       return;
     }
