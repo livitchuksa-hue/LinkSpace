@@ -63,6 +63,15 @@
       </div>
     </div>
 
+    <div v-if="form.type === 'NOTE'" class="editor__field">
+      <span>Файл заметки (.md)</span>
+      <div class="editor__path">
+        <input v-model="form.path" type="text" placeholder="Необязательно — например C:\notes\idea.md" />
+        <BaseButton v-if="isElectron" variant="ghost" type="button" @click="chooseNoteFile">Выбрать…</BaseButton>
+      </div>
+      <p class="editor__hint">Если указан путь, текст заметки хранится в .md файле. Пустое поле — заметка живёт только в базе приложения.</p>
+    </div>
+
     <div v-if="form.type === 'FILE' || form.type === 'FOLDER'" class="editor__field">
       <span>Путь</span>
       <div class="editor__path">
@@ -104,7 +113,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['save', 'cancel']);
-const { isElectron, selectFile, selectFolder, statPath } = useElectron();
+const { isElectron, selectFile, selectFolder, statPath, readText, writeText } = useElectron();
 
 const form = reactive({
   title: props.object?.title || '',
@@ -130,6 +139,18 @@ const newTag = reactive({ name: '', color: '#8f8f8f' });
 const existingTags = computed(() => tagRegistry(graphStore.objects));
 
 const error = ref(null);
+
+watch(
+  () => [form.type, form.path],
+  async () => {
+    if (form.type !== 'NOTE' || !form.path.trim() || !isElectron) return;
+    const result = await readText(form.path.trim());
+    if (result?.ok) {
+      form.content = result.text;
+    }
+  },
+  { immediate: true },
+);
 
 watch(() => form.type, (type) => {
   if (type === 'NOTE') {
@@ -157,6 +178,19 @@ const titlePlaceholder = computed(() => {
   if (form.type === 'FILE' || form.type === 'FOLDER') return 'Название (по умолчанию — имя файла)';
   return 'Название заметки';
 });
+
+async function chooseNoteFile() {
+  const selected = await selectFile({
+    filters: [{ name: 'Markdown / текст', extensions: ['md', 'markdown', 'txt'] }],
+  });
+  const target = selected[0];
+  if (!target) return;
+  form.path = target;
+  const result = await readText(target);
+  if (result?.ok) {
+    form.content = result.text;
+  }
+}
 
 async function choosePath() {
   error.value = null;
@@ -207,7 +241,7 @@ function addNewTag() {
   newTag.name = '';
 }
 
-function submit() {
+async function submit() {
   error.value = null;
 
   if (!form.title.trim()) {
@@ -240,6 +274,15 @@ function submit() {
   }
 
   form.color = normalizeHex(form.color) || '';
+  form.path = form.path.trim();
+
+  if (form.type === 'NOTE' && form.path && isElectron) {
+    const result = await writeText(form.path, form.content || '');
+    if (!result.ok) {
+      error.value = result.error || 'Не удалось записать файл заметки';
+      return;
+    }
+  }
 
   emit('save', { ...form });
 }

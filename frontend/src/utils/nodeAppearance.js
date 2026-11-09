@@ -59,6 +59,17 @@ function fileAppearance(path, title) {
   return FILE_COLORS.default;
 }
 
+const TEXT_EXTENSIONS = new Set([
+  ...EXTENSION_GROUPS.code,
+  'txt', 'text', 'md', 'markdown', 'csv', 'log', 'ini', 'cfg', 'env',
+]);
+
+export function isTextNode(node) {
+  if (node?.type !== 'FILE') return false;
+  const extension = fileExtension(node.path || node.title);
+  return TEXT_EXTENSIONS.has(extension);
+}
+
 export function isImageNode(node) {
   if (node?.type !== 'FILE') return false;
   const extension = fileExtension(node.path || node.title);

@@ -4,7 +4,8 @@
     <p class="details__type muted">{{ typeText }}</p>
     <p v-if="object.missing" class="details__missing">Файл или папка не найдены по сохранённому пути.</p>
     <p v-if="object.description" class="details__desc">{{ object.description }}</p>
-    <p v-if="object.type === 'NOTE' && object.content" class="details__content">{{ object.content }}</p>
+    <div v-if="contentView.html" class="details__content details__content--md" v-html="contentView.html"></div>
+    <p v-else-if="contentView.text" class="details__content">{{ contentView.text }}</p>
 
     <div v-if="objectTags.length" class="details__tags">
       <span
@@ -63,10 +64,14 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { formatDateTime, formatSize, typeLabel } from '../../utils/formatters';
-import { readableOn } from '../../utils/nodeAppearance';
+import { isTextNode, readableOn } from '../../utils/nodeAppearance';
+import { renderMarkdown } from '../../utils/markdown';
 import { parseTags } from '../../utils/tags';
+import { useElectron } from '../../composables/useElectron';
+
+const { readText } = useElectron();
 
 const props = defineProps({
   object: { type: Object, required: true },
@@ -79,6 +84,40 @@ const typeText = computed(() => {
     return 'Материал недоступен';
   }
   return typeLabel(props.object.type);
+});
+
+const isMarkdown = computed(() => {
+  if (props.object.type === 'NOTE') return true;
+  return /\.(md|markdown)$/i.test(props.object.path || '');
+});
+
+const contentSource = ref('');
+
+watch(
+  () => props.object,
+  async (object) => {
+    contentSource.value = '';
+    if (!object) return;
+    if (object.type === 'NOTE' && !object.path) {
+      contentSource.value = object.content || '';
+      return;
+    }
+    const external = (object.type === 'NOTE' && object.path) || isTextNode(object);
+    if (external && object.path) {
+      const result = await readText(object.path);
+      contentSource.value = result?.ok
+        ? result.text
+        : (object.type === 'NOTE' ? object.content || '' : '');
+    }
+  },
+  { immediate: true },
+);
+
+const contentView = computed(() => {
+  const text = contentSource.value;
+  if (!text) return { html: '', text: '' };
+  if (isMarkdown.value) return { html: renderMarkdown(text), text: '' };
+  return { html: '', text };
 });
 </script>
 
@@ -118,6 +157,89 @@ const typeText = computed(() => {
   white-space: pre-wrap;
   max-height: 160px;
   overflow: auto;
+}
+
+.details__content--md {
+  max-height: 340px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.details__content--md :deep(h1),
+.details__content--md :deep(h2),
+.details__content--md :deep(h3),
+.details__content--md :deep(h4) {
+  margin: 10px 0 4px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ls-text);
+}
+
+.details__content--md :deep(h1) { font-size: 1.15rem; }
+.details__content--md :deep(h2) { font-size: 1.05rem; }
+
+.details__content--md :deep(p) {
+  margin: 0 0 6px;
+}
+
+.details__content--md :deep(ul),
+.details__content--md :deep(ol) {
+  margin: 0 0 6px;
+  padding-left: 20px;
+}
+
+.details__content--md :deep(li) {
+  margin-bottom: 2px;
+}
+
+.details__content--md :deep(code) {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size: 0.8em;
+}
+
+.details__content--md :deep(pre) {
+  margin: 0 0 6px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.35);
+  overflow-x: auto;
+}
+
+.details__content--md :deep(pre code) {
+  padding: 0;
+  background: none;
+}
+
+.details__content--md :deep(blockquote) {
+  margin: 0 0 6px;
+  padding-left: 10px;
+  border-left: 3px solid var(--ls-border);
+  color: var(--ls-text-dim);
+}
+
+.details__content--md :deep(a) {
+  color: #8ab4ff;
+}
+
+.details__content--md :deep(table) {
+  border-collapse: collapse;
+  margin-bottom: 6px;
+}
+
+.details__content--md :deep(th),
+.details__content--md :deep(td) {
+  border: 1px solid var(--ls-border-subtle);
+  padding: 3px 8px;
+  font-size: 0.8rem;
+}
+
+.details__content--md :deep(hr) {
+  border: none;
+  border-top: 1px solid var(--ls-border-subtle);
+  margin: 10px 0;
 }
 
 .details__tags {

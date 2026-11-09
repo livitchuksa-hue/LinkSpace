@@ -39,6 +39,7 @@
         </div>
 
         <p v-if="previewText" class="node__content">{{ previewText }}</p>
+        <p v-if="filePreview" class="node__content node__content--file">{{ filePreview }}</p>
 
         <div class="node__meta">
           <span v-if="uiStore.graphFields.disk && node.disk"><em class="node__meta-label">Диск</em>{{ node.disk }}</span>
@@ -72,7 +73,8 @@
 import { computed, ref, watch } from 'vue';
 import { NODE_HEIGHT, NODE_WIDTH } from '../../utils/graphGeometry';
 import { formatDate } from '../../utils/formatters';
-import { isImageNode, nodeAppearance, readableOn } from '../../utils/nodeAppearance';
+import { isImageNode, isTextNode, nodeAppearance, readableOn } from '../../utils/nodeAppearance';
+import { markdownPlainText } from '../../utils/markdown';
 import { parseTags } from '../../utils/tags';
 import { uiStore } from '../../stores/uiStore';
 import { graphStore } from '../../stores/graphStore';
@@ -124,7 +126,27 @@ const innerStyle = computed(() => {
   };
 });
 
-const { readDataUrl } = useElectron();
+const { readDataUrl, readText } = useElectron();
+
+const filePreview = ref('');
+
+watch(
+  () => [props.node.type, props.node.path, props.node.title, props.node.missing],
+  async () => {
+    filePreview.value = '';
+    const targetPath = props.node.path;
+    const isExternalText = isTextNode(props.node)
+      || (props.node.type === 'NOTE' && Boolean(targetPath));
+    if (!isExternalText || !targetPath || props.node.missing) return;
+    const result = await readText(targetPath);
+    if (result?.ok && props.node.path === targetPath) {
+      filePreview.value = props.node.type === 'NOTE'
+        ? markdownPlainText(result.text)
+        : result.text.slice(0, 1200);
+    }
+  },
+  { immediate: true },
+);
 
 const photoUrl = ref(null);
 
@@ -143,7 +165,10 @@ watch(
 );
 
 const previewText = computed(() => {
-  if (props.node.type === 'NOTE') return props.node.content || '';
+  if (props.node.type === 'NOTE') {
+    if (props.node.path) return '';
+    return markdownPlainText(props.node.content || '', 600);
+  }
   return props.node.description || '';
 });
 
@@ -292,6 +317,15 @@ function onDoubleClick() {
   line-height: 1.35;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.node__content--file {
+  flex: 0 1 auto;
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size: 0.68rem;
+  opacity: 0.85;
+  border-top: 1px dashed rgba(255, 255, 255, 0.14);
+  padding-top: 5px;
 }
 
 .node__meta {

@@ -66,7 +66,9 @@ export function useGraph() {
     if (!isElectron) return;
 
     await Promise.all(graphStore.objects.map(async (object) => {
-      if (object.type !== 'FILE' && object.type !== 'FOLDER') {
+      const needsFile = object.type === 'FILE' || object.type === 'FOLDER'
+        || (object.type === 'NOTE' && Boolean(object.path));
+      if (!needsFile) {
         store.patchObject(object.id, { missing: false });
         return;
       }

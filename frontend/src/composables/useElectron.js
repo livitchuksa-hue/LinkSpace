@@ -6,9 +6,9 @@ export function useElectron() {
   const bridge = typeof window !== 'undefined' ? window.linkspace : null;
   const isElectron = Boolean(bridge);
 
-  async function selectFile() {
+  async function selectFile(options) {
     if (!bridge) return [];
-    const result = await bridge.selectFile();
+    const result = await bridge.selectFile(options);
     return Array.isArray(result) ? result : result ? [result] : [];
   }
 
@@ -40,6 +40,16 @@ export function useElectron() {
     return bridge.readDataUrl(targetPath);
   }
 
+  async function readText(targetPath) {
+    if (!bridge) return { ok: false, error: 'Electron API unavailable' };
+    return bridge.readText(targetPath);
+  }
+
+  async function writeText(targetPath, content) {
+    if (!bridge) return { ok: false, error: 'Electron API unavailable' };
+    return bridge.writeText(targetPath, content);
+  }
+
   function getPathForFile(file) {
     if (!bridge?.getPathForFile) return null;
     return bridge.getPathForFile(file);
@@ -53,6 +63,8 @@ export function useElectron() {
     openUrl,
     statPath,
     readDataUrl,
+    readText,
+    writeText,
     getPathForFile,
   };
 }

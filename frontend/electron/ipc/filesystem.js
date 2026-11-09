@@ -7,10 +7,11 @@ const path = require('path');
  * Вся работа с ОС выполняется только в Main Process.
  */
 function registerFilesystemIpc() {
-  ipcMain.handle('fs:select-file', async () => {
+  ipcMain.handle('fs:select-file', async (_event, options) => {
     const result = await dialog.showOpenDialog({
       title: 'Выберите файлы',
       properties: ['openFile', 'multiSelections'],
+      filters: Array.isArray(options?.filters) ? options.filters : undefined,
     });
 
     if (result.canceled || result.filePaths.length === 0) {
@@ -78,6 +79,39 @@ function registerFilesystemIpc() {
         name: path.basename(targetPath),
         disk: formatDisk(targetPath),
       };
+    }
+  });
+
+  ipcMain.handle('fs:read-text', async (_event, targetPath) => {
+    if (typeof targetPath !== 'string' || targetPath.trim() === '') {
+      return { ok: false, error: 'Path is required' };
+    }
+
+    const MAX_BYTES = 256 * 1024;
+    try {
+      const stats = await fs.stat(targetPath);
+      if (!stats.isFile()) return { ok: false, error: 'Not a file' };
+      if (stats.size > MAX_BYTES) return { ok: false, error: 'File too large' };
+      const text = await fs.readFile(targetPath, 'utf8');
+      return { ok: true, text: text.slice(0, 20000) };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('fs:write-text', async (_event, payload) => {
+    const targetPath = typeof payload?.path === 'string' ? payload.path.trim() : '';
+    const content = typeof payload?.content === 'string' ? payload.content : '';
+    if (!targetPath) {
+      return { ok: false, error: 'Path is required' };
+    }
+
+    try {
+      await fs.mkdir(path.dirname(targetPath), { recursive: true });
+      await fs.writeFile(targetPath, content, 'utf8');
+      return { ok: true };
+    } catch (error) {
+      return { ok: false, error: error.message };
     }
   });
 
