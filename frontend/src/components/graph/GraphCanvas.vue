@@ -64,6 +64,17 @@
         @edit="onNodeEdit"
         @context="onNodeContext"
       />
+
+      <svg class="world__labels" :width="svgSize" :height="svgSize">
+        <text
+          v-for="label in regionLabels"
+          :key="`region-label-${label.id}`"
+          class="region-label"
+          :transform="label.transform"
+        >
+          {{ label.name }}
+        </text>
+      </svg>
     </div>
 
     <div v-if="dropActive" class="drop-hint">Отпустите файлы или папку, чтобы добавить на граф</div>
@@ -123,6 +134,36 @@ const svgSize = 12000;
 const sortedObjects = computed(() => sortByLayer(props.objects));
 const sortedConnections = computed(() => sortByLayer(props.connections));
 const sortedRegions = computed(() => sortByLayer(props.regions));
+
+function regionLabelData(region) {
+  let coords = region.coordinates;
+  if (typeof coords === 'string') {
+    try {
+      coords = JSON.parse(coords);
+    } catch {
+      return null;
+    }
+  }
+  if (!Array.isArray(coords) || coords.length < 3) return null;
+  const points = coords
+    .map((point) => ({ x: Number(point?.x), y: Number(point?.y) }))
+    .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y));
+  if (points.length < 3) return null;
+  const cx = points.reduce((sum, point) => sum + point.x, 0) / points.length;
+  const cy = points.reduce((sum, point) => sum + point.y, 0) / points.length;
+  const zoom = graphStore.view.scale || 1;
+  const scale = Math.min(3.5, Math.max(0.5, 1 / zoom));
+  return {
+    id: region.id,
+    name: region.name,
+    transform: `translate(${cx} ${cy}) scale(${scale})`,
+  };
+}
+
+const regionLabels = computed(() => sortedRegions.value
+  .filter((region) => region.name)
+  .map(regionLabelData)
+  .filter(Boolean));
 
 function openContextMenu(event, kind, item) {
   event.preventDefault();
@@ -391,6 +432,26 @@ defineExpose({ root, finishRegion, cancelRegion });
 .world__svg :deep(.preview),
 .world__svg :deep(.edge__label) {
   pointer-events: none;
+}
+
+.world__labels {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.region-label {
+  fill: #d8d8d8;
+  font-size: 12px;
+  font-weight: 600;
+  text-anchor: middle;
+  dominant-baseline: central;
+  paint-order: stroke;
+  stroke: #0a0a0a;
+  stroke-width: 4px;
+  user-select: none;
 }
 
 .preview {

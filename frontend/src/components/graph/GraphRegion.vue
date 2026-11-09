@@ -103,20 +103,12 @@
         />
       </template>
     </template>
-    <text
-      v-if="region.name"
-      class="region__label"
-      :transform="labelTransform"
-    >
-      {{ region.name }}
-    </text>
   </g>
 </template>
 
 <script setup>
 import { computed } from 'vue';
 import { uiStore } from '../../stores/uiStore';
-import { graphStore } from '../../stores/graphStore';
 import { smoothClosedPath } from '../../utils/graphGeometry';
 
 const props = defineProps({
@@ -187,27 +179,6 @@ const outlineColor = computed(() => {
   if (props.selected) return '#ffffff';
   return props.region.color || 'rgba(255, 255, 255, 0.32)';
 });
-
-const labelPoint = computed(() => {
-  if (!points.value.length) return { x: 0, y: 0 };
-  const sum = points.value.reduce((acc, point) => ({
-    x: acc.x + point.x,
-    y: acc.y + point.y,
-  }), { x: 0, y: 0 });
-  return {
-    x: sum.x / points.value.length,
-    y: sum.y / points.value.length,
-  };
-});
-
-const labelScale = computed(() => {
-  const zoom = graphStore.view.scale || 1;
-  return Math.min(3.5, Math.max(0.5, 1 / zoom));
-});
-
-const labelTransform = computed(() =>
-  `translate(${labelPoint.value.x} ${labelPoint.value.y}) scale(${labelScale.value})`,
-);
 </script>
 
 <style scoped>
@@ -258,15 +229,4 @@ const labelTransform = computed(() =>
   cursor: nwse-resize;
 }
 
-.region__label {
-  fill: #d8d8d8;
-  font-size: 12px;
-  font-weight: 600;
-  text-anchor: middle;
-  dominant-baseline: central;
-  paint-order: stroke;
-  stroke: #0a0a0a;
-  stroke-width: 4px;
-  pointer-events: none;
-}
 </style>
