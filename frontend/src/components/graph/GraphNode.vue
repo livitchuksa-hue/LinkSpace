@@ -1,6 +1,7 @@
 <template>
   <div
     class="graph-node"
+    :class="{ 'graph-node--dimmed': dimmed }"
     :style="nodePosition"
     @pointerdown.stop="onPointerDown"
     @click.stop="onClick"
@@ -84,6 +85,7 @@ import { isImageNode, isTextNode, nodeAppearance, readableOn } from '../../utils
 import { markdownPlainText } from '../../utils/markdown';
 import { linkDomain, parseLinkPreview } from '../../utils/linkPreview';
 import { parseTags } from '../../utils/tags';
+import { objectMatchesFilter } from '../../utils/filters';
 import { uiStore } from '../../stores/uiStore';
 import { graphStore } from '../../stores/graphStore';
 import { useElectron } from '../../composables/useElectron';
@@ -117,6 +119,8 @@ const nodePosition = computed(() => ({
 }));
 
 const nodeTags = computed(() => parseTags(props.node.tags).slice(0, 4));
+
+const dimmed = computed(() => !objectMatchesFilter(props.node, uiStore.filter));
 
 const contentScale = computed(() => {
   const zoom = graphStore.view.scale || 1;
@@ -216,6 +220,11 @@ function onDoubleClick() {
   top: 0;
   cursor: grab;
   z-index: 1;
+  transition: opacity 0.25s ease;
+}
+
+.graph-node--dimmed {
+  opacity: 0.18;
 }
 
 .node {

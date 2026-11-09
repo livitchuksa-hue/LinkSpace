@@ -1,4 +1,5 @@
 import { reactive } from 'vue';
+import { createDefaultFilter } from '../utils/filters';
 
 /**
  * Состояние интерфейса: экран, инструмент, выбранный объект, поля на карточках.
@@ -24,6 +25,7 @@ export const uiStore = reactive({
   regionToolShape: 'polygon',
   pendingEdit: null,
   pendingDelete: null,
+  filter: createDefaultFilter(),
   graphFields: {
     title: true,
     type: true,

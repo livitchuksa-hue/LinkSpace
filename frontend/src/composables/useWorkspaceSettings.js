@@ -2,11 +2,13 @@ import { watch } from 'vue';
 import { settingsService } from '../services/settingsService';
 import { graphStore } from '../stores/graphStore';
 import { uiStore } from '../stores/uiStore';
+import { normalizeFilter } from '../utils/filters';
 
 const VIEW_KEY = 'graph.view';
 const FIELDS_KEY = 'graph.fields';
 const PANELS_KEY = 'ui.panels';
 const REGION_KEY = 'graph.region';
+const FILTER_KEY = 'graph.filter';
 const SAVE_DELAY = 500;
 
 function parseJson(value, fallback) {
@@ -50,6 +52,11 @@ export function useWorkspaceSettings() {
     settingsService.set(REGION_KEY, JSON.stringify(region)).catch(() => {});
   }, SAVE_DELAY);
 
+  const saveFilter = debounce((filter) => {
+    if (!loaded) return;
+    settingsService.set(FILTER_KEY, JSON.stringify(filter)).catch(() => {});
+  }, SAVE_DELAY);
+
   async function loadSettings({ retries = 20, retryDelay = 1200 } = {}) {
     for (let attempt = 0; attempt <= retries; attempt += 1) {
       try {
@@ -87,6 +94,10 @@ export function useWorkspaceSettings() {
             uiStore.regionDefaults.pointEditing = region.pointEditing;
           }
         }
+        const filter = parseJson(settings[FILTER_KEY], null);
+        if (filter) {
+          uiStore.filter = normalizeFilter(filter);
+        }
         loaded = true;
         return;
       } catch {
@@ -108,6 +119,7 @@ export function useWorkspaceSettings() {
       { deep: true },
     );
     watch(() => ({ ...uiStore.regionDefaults }), saveRegion, { deep: true });
+    watch(() => ({ ...uiStore.filter, types: [...uiStore.filter.types], tags: [...uiStore.filter.tags] }), saveFilter, { deep: true });
   }
 
   return { loadSettings, bindSettingsPersistence };
