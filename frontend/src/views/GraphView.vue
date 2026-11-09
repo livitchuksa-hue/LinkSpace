@@ -54,11 +54,12 @@
         <p class="welcome__eyebrow">Добро пожаловать</p>
         <h2 class="welcome__title">Linkspace</h2>
         <p class="welcome__text">
-          Организуйте заметки, файлы, папки и ссылки в одном интерактивном графе.
+          Здесь будет ваш граф заметок, файлов, папок и ссылок.
         </p>
-        <BaseButton variant="primary" @click="openCreate('NOTE')">
-          Создать первый объект
-        </BaseButton>
+        <p class="welcome__hint">
+          Чтобы создать или прикрепить объект, наведите курсор на левую часть экрана —
+          там появится панель с инструментами.
+        </p>
       </div>
     </GraphCanvas>
 
@@ -103,7 +104,6 @@ import { useElectron } from '../composables/useElectron';
 import { useGraphActions, canvasRef, createOpen, createType, regionDraft } from '../composables/useGraphActions';
 
 const {
-  openCreate,
   toggleTool,
   finishRegion,
   setRegionToolShape,
@@ -124,10 +124,11 @@ const regionShapeOptions = [
 ];
 
 const regionHint = computed(() => {
+  const keys = ' · Enter — завершить, Esc — отмена';
   if (uiStore.regionToolShape === 'polygon') {
-    return 'Кликайте точки контура; клик по первой точке, двойной клик или «Завершить» замыкает его';
+    return `Кликайте точки контура; клик по первой точке, двойной клик или «Завершить» замыкает его${keys}`;
   }
-  return 'Кликните первый угол, затем противоположный — область построится по ним';
+  return `Кликните первый угол, затем противоположный — область построится по ним${keys}`;
 });
 
 function handleSelectNode(node) {
@@ -304,7 +305,7 @@ onMounted(async () => {
   padding: var(--ls-space-6);
   border: 1px solid var(--ls-border);
   border-radius: var(--ls-radius-lg);
-  background: rgba(18, 22, 30, 0.88);
+  background: var(--ls-bg-elevated);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
 }
 
@@ -313,7 +314,7 @@ onMounted(async () => {
   font-size: 0.75rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--ls-accent);
+  color: var(--ls-text-muted);
 }
 
 .welcome__title {
@@ -324,8 +325,15 @@ onMounted(async () => {
 }
 
 .welcome__text {
-  margin: 0 0 var(--ls-space-5);
+  margin: 0 0 var(--ls-space-3);
   color: var(--ls-text-muted);
   font-size: 0.95rem;
+}
+
+.welcome__hint {
+  margin: 0;
+  color: var(--ls-text-dim);
+  font-size: 0.82rem;
+  line-height: 1.5;
 }
 </style>

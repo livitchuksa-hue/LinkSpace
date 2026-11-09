@@ -23,6 +23,7 @@ export const uiStore = reactive({
   },
   regionToolShape: 'polygon',
   pendingEdit: null,
+  pendingDelete: null,
   graphFields: {
     title: true,
     type: true,

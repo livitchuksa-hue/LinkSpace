@@ -170,6 +170,14 @@ watch(selectedConnection, (connection) => {
   connectionColor.value = connection?.color || '';
 });
 
+watch(() => uiStore.pendingDelete, (kind) => {
+  if (!kind) return;
+  uiStore.pendingDelete = null;
+  if (kind === 'object' && selectedObject.value) confirmDeleteObject.value = true;
+  else if (kind === 'connection' && selectedConnection.value) confirmDeleteConnection.value = true;
+  else if (kind === 'region' && selectedRegion.value) confirmDeleteRegion.value = true;
+});
+
 watch(() => uiStore.pendingEdit, (request) => {
   if (!request) return;
   uiStore.pendingEdit = null;

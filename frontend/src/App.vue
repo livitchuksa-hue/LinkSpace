@@ -43,9 +43,11 @@ import SettingsView from './views/SettingsView.vue';
 import BaseModal from './components/common/BaseModal.vue';
 import { uiStore } from './stores/uiStore';
 import { useWorkspaceSettings } from './composables/useWorkspaceSettings';
+import { useKeyboardShortcuts } from './composables/useKeyboardShortcuts';
 
 const { loadSettings, bindSettingsPersistence } = useWorkspaceSettings();
 bindSettingsPersistence();
+useKeyboardShortcuts();
 
 const hasSelection = computed(() => Boolean(
   uiStore.selectedObjectId || uiStore.selectedConnectionId || uiStore.selectedRegionId,

@@ -1,6 +1,6 @@
 <template>
   <Teleport to="body">
-    <div v-if="modelValue" class="modal" role="dialog" aria-modal="true">
+    <div v-if="modelValue" ref="root" class="modal" role="dialog" aria-modal="true">
       <div class="modal__backdrop" @click="close"></div>
       <div class="modal__panel" :style="panelWidth ? { width: panelWidth } : {}">
         <header class="modal__header">
@@ -19,6 +19,8 @@
 </template>
 
 <script setup>
+import { onBeforeUnmount, onMounted, ref } from 'vue';
+
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
   title: { type: String, default: '' },
@@ -26,10 +28,23 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['update:modelValue']);
+const root = ref(null);
 
 function close() {
   emit('update:modelValue', false);
 }
+
+function onKeydown(event) {
+  if (event.key !== 'Escape' || !props.modelValue) return;
+  const modals = document.querySelectorAll('.modal');
+  const top = modals[modals.length - 1];
+  if (top && root.value && top.contains(root.value)) {
+    close();
+  }
+}
+
+onMounted(() => window.addEventListener('keydown', onKeydown));
+onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown));
 </script>
 
 <style scoped>
