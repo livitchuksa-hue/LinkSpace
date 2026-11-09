@@ -22,6 +22,7 @@ public class ObjectResponse {
     private Double width;
     private Double height;
     private String tags;
+    private String preview;
     private Integer zIndex;
     private Instant createdAt;
     private Instant updatedAt;
@@ -46,6 +47,7 @@ public class ObjectResponse {
         response.width = object.getWidth();
         response.height = object.getHeight();
         response.tags = object.getTags();
+        response.preview = object.getPreview();
         response.zIndex = object.getZIndex();
         response.createdAt = object.getCreatedAt();
         response.updatedAt = object.getUpdatedAt();
@@ -119,6 +121,10 @@ public class ObjectResponse {
 
     public String getTags() {
         return tags;
+    }
+
+    public String getPreview() {
+        return preview;
     }
 
     public Integer getZIndex() {

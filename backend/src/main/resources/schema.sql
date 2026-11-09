@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS information_objects (
     width REAL,
     height REAL,
     tags TEXT,
+    preview TEXT,
     z_index INTEGER,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,

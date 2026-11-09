@@ -13,26 +13,33 @@
         'node--selected': selected,
         'node--connect-source': connectSource,
         'node--missing': node.missing,
-        'node--photo': photoUrl,
+        'node--photo': cardImage,
       }"
       :style="nodeStyle"
     >
       <div class="node__inner" :style="innerStyle">
         <img
-          v-if="photoUrl"
+          v-if="cardImage"
           class="node__photo"
-          :src="photoUrl"
+          :src="cardImage"
           alt=""
           draggable="false"
         />
-        <div v-if="photoUrl" class="node__photo-fade" />
+        <div v-if="cardImage" class="node__photo-fade" />
         <div class="node__header">
           <span
             v-if="uiStore.graphFields.type"
             class="node__kind"
             :style="{ background: appearance.bg, color: appearance.fg }"
           >
-            <TypeIcon :type="node.type" />
+            <img
+              v-if="node.type === 'LINK' && faviconSrc"
+              class="node__favicon"
+              :src="faviconSrc"
+              alt=""
+              draggable="false"
+            />
+            <TypeIcon v-else :type="node.type" />
           </span>
           <span v-if="uiStore.graphFields.title" class="node__title">{{ node.title }}</span>
           <span v-if="node.missing" class="node__missing" title="Файл не найден">!</span>
@@ -75,6 +82,7 @@ import { NODE_HEIGHT, NODE_WIDTH } from '../../utils/graphGeometry';
 import { formatDate } from '../../utils/formatters';
 import { isImageNode, isTextNode, nodeAppearance, readableOn } from '../../utils/nodeAppearance';
 import { markdownPlainText } from '../../utils/markdown';
+import { linkDomain, parseLinkPreview } from '../../utils/linkPreview';
 import { parseTags } from '../../utils/tags';
 import { uiStore } from '../../stores/uiStore';
 import { graphStore } from '../../stores/graphStore';
@@ -163,6 +171,17 @@ watch(
   },
   { immediate: true },
 );
+
+const linkPreview = computed(() => parseLinkPreview(props.node.preview));
+
+const cardImage = computed(() => photoUrl.value || linkPreview.value?.image || '');
+
+const faviconSrc = computed(() => {
+  if (props.node.type !== 'LINK' || !props.node.url) return '';
+  if (linkPreview.value?.favicon) return linkPreview.value.favicon;
+  const domain = linkDomain(props.node.url);
+  return domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=64` : '';
+});
 
 const previewText = computed(() => {
   if (props.node.type === 'NOTE') {
@@ -283,6 +302,13 @@ function onDoubleClick() {
   height: 22px;
   flex: 0 0 22px;
   border-radius: 5px;
+}
+
+.node__favicon {
+  width: 15px;
+  height: 15px;
+  border-radius: 3px;
+  object-fit: contain;
 }
 
 .node__title {

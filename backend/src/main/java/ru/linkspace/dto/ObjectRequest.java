@@ -25,6 +25,7 @@ public class ObjectRequest {
     private Double width;
     private Double height;
     private String tags;
+    private String preview;
     private Integer zIndex;
 
     @NotNull
@@ -167,6 +168,14 @@ public class ObjectRequest {
 
     public void setTags(String tags) {
         this.tags = tags;
+    }
+
+    public String getPreview() {
+        return preview;
+    }
+
+    public void setPreview(String preview) {
+        this.preview = preview;
     }
 
     public Integer getZIndex() {

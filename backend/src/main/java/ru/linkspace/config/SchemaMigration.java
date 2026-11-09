@@ -29,6 +29,7 @@ public class SchemaMigration implements ApplicationRunner {
         addColumnIfMissing("information_objects", "width", "REAL");
         addColumnIfMissing("information_objects", "height", "REAL");
         addColumnIfMissing("information_objects", "tags", "TEXT");
+        addColumnIfMissing("information_objects", "preview", "TEXT");
         addColumnIfMissing("information_objects", "z_index", "INTEGER");
         addColumnIfMissing("connections", "color", "TEXT");
         addColumnIfMissing("connections", "z_index", "INTEGER");

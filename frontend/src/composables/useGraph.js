@@ -5,6 +5,7 @@ import { graphStore, useGraphStore } from '../stores/graphStore';
 import { uiStore } from '../stores/uiStore';
 import { useElectron } from './useElectron';
 import { parseTags, serializeTags } from '../utils/tags';
+import { parseLinkPreview, serializeLinkPreview } from '../utils/linkPreview';
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -29,7 +30,7 @@ function topLayerIndex(list) {
  */
 export function useGraph() {
   const store = useGraphStore();
-  const { isElectron, statPath } = useElectron();
+  const { isElectron, statPath, unfurlLink } = useElectron();
 
   async function loadGraph({ retries = 20, retryDelay = 1200 } = {}) {
     store.setLoading(true);
@@ -47,7 +48,7 @@ export function useGraph() {
         store.setObjects(objects.map(normalizeObject));
         store.setConnections(connections);
         store.setRegions(regions);
-        await refreshFileStatus();
+        await Promise.all([refreshFileStatus(), refreshLinkPreviews()]);
         store.setLoading(false);
         return;
       } catch (error) {
@@ -85,6 +86,32 @@ export function useGraph() {
     }));
   }
 
+  async function refreshLinkPreviews() {
+    if (!isElectron) return;
+
+    const pending = graphStore.objects.filter((object) => {
+      if (object.type !== 'LINK' || !object.url) return false;
+      return !parseLinkPreview(object.preview)?.image;
+    }).slice(0, 20);
+
+    await Promise.all(pending.map(async (object) => {
+      try {
+        const result = await unfurlLink(object.url);
+        if (!result?.ok) return;
+        const preview = serializeLinkPreview(result);
+        if (!preview) return;
+        store.patchObject(object.id, { preview });
+        try {
+          await objectService.update(object.id, toPayload({ ...object, preview }));
+        } catch {
+          // превью — необязательные данные, ошибку сохранения игнорируем
+        }
+      } catch {
+        // сайт недоступен — оставляем карточку без превью
+      }
+    }));
+  }
+
   function toPayload(object) {
     return {
       title: object.title,
@@ -103,6 +130,7 @@ export function useGraph() {
       width: object.width ?? null,
       height: object.height ?? null,
       tags: serializeTags(object.tags),
+      preview: object.preview || null,
       zIndex: object.zIndex ?? null,
     };
   }
@@ -273,6 +301,7 @@ export function useGraph() {
   return {
     loadGraph,
     refreshFileStatus,
+    refreshLinkPreviews,
     createObject,
     updateObject,
     moveObject,

@@ -88,6 +88,19 @@
       <input v-model="form.url" type="url" required placeholder="https://example.com" />
     </label>
 
+    <div v-if="form.type === 'LINK'" class="editor__field">
+      <span>Превью страницы</span>
+      <div class="editor__path">
+        <span class="editor__hint">
+          {{ linkPreviewState }}
+        </span>
+        <BaseButton variant="ghost" type="button" :disabled="linkPreviewLoading || !form.url.trim()" @click="refreshLinkPreview">
+          Обновить
+        </BaseButton>
+      </div>
+      <p class="editor__hint">Favicon, заголовок и картинка og:image сохраняются в карточке. Обновляется автоматически при сохранении.</p>
+    </div>
+
     <p v-if="error" class="editor__error">{{ error }}</p>
 
     <div class="editor__actions">
@@ -106,6 +119,7 @@ import { validateObjectPayload } from '../../utils/validators';
 import { normalizeHex } from '../../utils/nodeAppearance';
 import { graphStore } from '../../stores/graphStore';
 import { parseTags, tagKey, tagRegistry } from '../../utils/tags';
+import { parseLinkPreview, serializeLinkPreview } from '../../utils/linkPreview';
 
 const props = defineProps({
   object: { type: Object, default: null },
@@ -113,7 +127,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['save', 'cancel']);
-const { isElectron, selectFile, selectFolder, statPath, readText, writeText } = useElectron();
+const { isElectron, selectFile, selectFolder, statPath, readText, writeText, unfurlLink } = useElectron();
 
 const form = reactive({
   title: props.object?.title || '',
@@ -129,6 +143,7 @@ const form = reactive({
   x: props.object?.x ?? 120,
   y: props.object?.y ?? 120,
   color: props.object?.color || '',
+  preview: props.object?.preview || '',
   width: props.object?.width ?? null,
   height: props.object?.height ?? null,
   tags: parseTags(props.object?.tags),
@@ -178,6 +193,39 @@ const titlePlaceholder = computed(() => {
   if (form.type === 'FILE' || form.type === 'FOLDER') return 'Название (по умолчанию — имя файла)';
   return 'Название заметки';
 });
+
+const linkPreviewLoading = ref(false);
+
+const linkPreviewState = computed(() => {
+  const preview = parseLinkPreview(form.preview);
+  if (!preview) {
+    return isElectron ? 'Превью ещё не загружено — обновится при сохранении' : 'Доступно только в приложении';
+  }
+  const parts = [];
+  if (preview.title) parts.push(preview.title);
+  parts.push(preview.image ? 'с изображением' : 'без изображения');
+  return parts.join(' · ');
+});
+
+async function refreshLinkPreview() {
+  const url = form.url.trim();
+  if (!url || !isElectron) return;
+  linkPreviewLoading.value = true;
+  error.value = null;
+  try {
+    const result = await unfurlLink(url);
+    if (result?.ok) {
+      form.preview = serializeLinkPreview(result) || '';
+      if (!form.title.trim() && result.title) {
+        form.title = result.title;
+      }
+    } else {
+      error.value = result?.error || 'Не удалось загрузить превью';
+    }
+  } finally {
+    linkPreviewLoading.value = false;
+  }
+}
 
 async function chooseNoteFile() {
   const selected = await selectFile({
@@ -281,6 +329,25 @@ async function submit() {
     if (!result.ok) {
       error.value = result.error || 'Не удалось записать файл заметки';
       return;
+    }
+  }
+
+  if (
+    form.type === 'LINK'
+    && isElectron
+    && form.url.trim()
+    && (!form.preview || props.object?.url !== form.url.trim())
+  ) {
+    try {
+      const result = await unfurlLink(form.url.trim());
+      if (result?.ok) {
+        form.preview = serializeLinkPreview(result) || form.preview;
+        if (!form.title.trim() && result.title) {
+          form.title = result.title;
+        }
+      }
+    } catch {
+      // превью необязательно — сохраняем ссылку без него
     }
   }
 

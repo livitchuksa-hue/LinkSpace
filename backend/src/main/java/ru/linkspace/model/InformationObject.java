@@ -21,6 +21,7 @@ public class InformationObject {
     private Double width;
     private Double height;
     private String tags;
+    private String preview;
     private Integer zIndex;
     private Instant createdAt;
     private Instant updatedAt;
@@ -160,6 +161,14 @@ public class InformationObject {
 
     public void setTags(String tags) {
         this.tags = tags;
+    }
+
+    public String getPreview() {
+        return preview;
+    }
+
+    public void setPreview(String preview) {
+        this.preview = preview;
     }
 
     public Integer getZIndex() {

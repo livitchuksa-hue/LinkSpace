@@ -111,6 +111,7 @@ public class ObjectService {
         target.setWidth(request.getWidth());
         target.setHeight(request.getHeight());
         target.setTags(emptyToNull(request.getTags()));
+        target.setPreview(emptyToNull(request.getPreview()));
         target.setZIndex(request.getZIndex());
         return target;
     }

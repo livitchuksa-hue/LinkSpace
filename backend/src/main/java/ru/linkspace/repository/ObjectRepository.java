@@ -53,15 +53,15 @@ public class ObjectRepository {
                     INSERT INTO information_objects
                     (title, type, description, content, path, url, disk, file_size,
                      file_created_at, file_modified_at, x, y, color, width, height, tags,
-                     z_index, created_at, updated_at, last_opened_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                     z_index, preview, created_at, updated_at, last_opened_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     Statement.RETURN_GENERATED_KEYS
             );
             bindObject(ps, object);
-            ps.setString(18, object.getCreatedAt().toString());
-            ps.setString(19, object.getUpdatedAt().toString());
-            ps.setString(20, instantToString(object.getLastOpenedAt()));
+            ps.setString(19, object.getCreatedAt().toString());
+            ps.setString(20, object.getUpdatedAt().toString());
+            ps.setString(21, instantToString(object.getLastOpenedAt()));
             return ps;
         }, keyHolder);
 
@@ -81,14 +81,14 @@ public class ObjectRepository {
                     SET title = ?, type = ?, description = ?, content = ?, path = ?, url = ?,
                         disk = ?, file_size = ?, file_created_at = ?, file_modified_at = ?,
                         x = ?, y = ?, color = ?, width = ?, height = ?, tags = ?,
-                        z_index = ?, updated_at = ?, last_opened_at = ?
+                        z_index = ?, preview = ?, updated_at = ?, last_opened_at = ?
                     WHERE id = ?
                     """
             );
             bindObject(ps, object);
-            ps.setString(18, object.getUpdatedAt().toString());
-            ps.setString(19, instantToString(object.getLastOpenedAt()));
-            ps.setLong(20, object.getId());
+            ps.setString(19, object.getUpdatedAt().toString());
+            ps.setString(20, instantToString(object.getLastOpenedAt()));
+            ps.setLong(21, object.getId());
             return ps;
         });
         return object;
@@ -142,6 +142,7 @@ public class ObjectRepository {
         } else {
             ps.setInt(17, object.getZIndex());
         }
+        ps.setString(18, object.getPreview());
     }
 
     private void setNullableDouble(PreparedStatement ps, int index, Double value) throws SQLException {
@@ -174,6 +175,7 @@ public class ObjectRepository {
         object.setWidth(readNullableDouble(rs, "width"));
         object.setHeight(readNullableDouble(rs, "height"));
         object.setTags(rs.getString("tags"));
+        object.setPreview(rs.getString("preview"));
         object.setZIndex(readNullableInt(rs, "z_index"));
         object.setCreatedAt(parseInstant(rs.getString("created_at")));
         object.setUpdatedAt(parseInstant(rs.getString("updated_at")));

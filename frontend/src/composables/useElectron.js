@@ -50,6 +50,11 @@ export function useElectron() {
     return bridge.writeText(targetPath, content);
   }
 
+  async function unfurlLink(url) {
+    if (!bridge) return { ok: false, error: 'Electron API unavailable' };
+    return bridge.unfurlLink(url);
+  }
+
   function getPathForFile(file) {
     if (!bridge?.getPathForFile) return null;
     return bridge.getPathForFile(file);
@@ -65,6 +70,7 @@ export function useElectron() {
     readDataUrl,
     readText,
     writeText,
+    unfurlLink,
     getPathForFile,
   };
 }

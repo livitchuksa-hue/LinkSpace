@@ -3,6 +3,7 @@ const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const { registerFilesystemIpc } = require('./ipc/filesystem');
+const { registerLinkPreviewIpc } = require('./ipc/linkPreview');
 
 const VITE_DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL || 'http://localhost:5173';
 const useViteDevServer = process.env.ELECTRON_DEV === '1';
@@ -178,6 +179,7 @@ function createWindow() {
 app.whenReady().then(() => {
   console.log('[electron] app ready');
   registerFilesystemIpc();
+  registerLinkPreviewIpc();
   ensureBackendProcess();
   createWindow();
 

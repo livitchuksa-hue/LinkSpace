@@ -4,6 +4,10 @@
     <p class="details__type muted">{{ typeText }}</p>
     <p v-if="object.missing" class="details__missing">Файл или папка не найдены по сохранённому пути.</p>
     <p v-if="object.description" class="details__desc">{{ object.description }}</p>
+    <div v-if="linkPreviewInfo && (linkPreviewInfo.title || linkPreviewInfo.description)" class="details__linkpreview">
+      <p v-if="linkPreviewInfo.title" class="details__link-title">{{ linkPreviewInfo.title }}</p>
+      <p v-if="linkPreviewInfo.description" class="details__link-desc">{{ linkPreviewInfo.description }}</p>
+    </div>
     <div v-if="contentView.html" class="details__content details__content--md" v-html="contentView.html"></div>
     <p v-else-if="contentView.text" class="details__content">{{ contentView.text }}</p>
 
@@ -68,6 +72,7 @@ import { computed, ref, watch } from 'vue';
 import { formatDateTime, formatSize, typeLabel } from '../../utils/formatters';
 import { isTextNode, readableOn } from '../../utils/nodeAppearance';
 import { renderMarkdown } from '../../utils/markdown';
+import { parseLinkPreview } from '../../utils/linkPreview';
 import { parseTags } from '../../utils/tags';
 import { useElectron } from '../../composables/useElectron';
 
@@ -78,6 +83,10 @@ const props = defineProps({
 });
 
 const objectTags = computed(() => parseTags(props.object.tags));
+
+const linkPreviewInfo = computed(() => (
+  props.object.type === 'LINK' ? parseLinkPreview(props.object.preview) : null
+));
 
 const typeText = computed(() => {
   if ((props.object.type === 'FILE' || props.object.type === 'FOLDER') && props.object.missing) {
@@ -157,6 +166,31 @@ const contentView = computed(() => {
   white-space: pre-wrap;
   max-height: 160px;
   overflow: auto;
+}
+
+.details__linkpreview {
+  margin: 0 0 var(--ls-space-4);
+  padding: 10px 12px;
+  border: 1px solid var(--ls-border-subtle);
+  border-radius: var(--ls-radius-sm);
+  background: var(--ls-bg-soft);
+}
+
+.details__link-title {
+  margin: 0 0 4px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--ls-text);
+}
+
+.details__link-desc {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--ls-text-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .details__content--md {

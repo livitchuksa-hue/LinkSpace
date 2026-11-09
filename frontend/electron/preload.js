@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld('linkspace', {
   readDataUrl: (targetPath) => ipcRenderer.invoke('fs:read-data-url', targetPath),
   readText: (targetPath) => ipcRenderer.invoke('fs:read-text', targetPath),
   writeText: (targetPath, content) => ipcRenderer.invoke('fs:write-text', { path: targetPath, content }),
+  unfurlLink: (url) => ipcRenderer.invoke('link:unfurl', url),
   getPathForFile: (file) => {
     try {
       return webUtils.getPathForFile(file);
