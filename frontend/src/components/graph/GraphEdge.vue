@@ -18,8 +18,7 @@
     <text
       v-if="edge.label"
       class="edge__label"
-      :x="labelPoint.x"
-      :y="labelPoint.y"
+      :transform="labelTransform"
       :style="{ fill: edgeColor }"
     >
       {{ edge.label }}
@@ -30,6 +29,7 @@
 <script setup>
 import { computed } from 'vue';
 import { midpoint, nodeCenter } from '../../utils/graphGeometry';
+import { graphStore } from '../../stores/graphStore';
 
 const props = defineProps({
   edge: { type: Object, required: true },
@@ -45,6 +45,15 @@ const sourceCenter = computed(() => nodeCenter(source.value || { x: 0, y: 0 }));
 const targetCenter = computed(() => nodeCenter(target.value || { x: 0, y: 0 }));
 const labelPoint = computed(() => midpoint(sourceCenter.value, targetCenter.value));
 const edgeColor = computed(() => props.edge.color || '#8f8f8f');
+
+const labelScale = computed(() => {
+  const zoom = graphStore.view.scale || 1;
+  return Math.min(3.5, Math.max(0.5, 1 / zoom));
+});
+
+const labelTransform = computed(() =>
+  `translate(${labelPoint.value.x} ${labelPoint.value.y}) scale(${labelScale.value})`,
+);
 </script>
 
 <style scoped>
@@ -71,6 +80,7 @@ const edgeColor = computed(() => props.edge.color || '#8f8f8f');
   fill: #bdbdbd;
   font-size: 11px;
   text-anchor: middle;
+  dominant-baseline: central;
   paint-order: stroke;
   stroke: #0a0a0a;
   stroke-width: 3px;

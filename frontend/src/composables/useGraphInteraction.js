@@ -1,5 +1,5 @@
 import { reactive } from 'vue';
-import { clamp, clientToWorld, nodeCenter, pointInPolygon } from '../utils/graphGeometry';
+import { clamp, clientToWorld, nodeCenter, pointInPolygon, smoothOpenPath } from '../utils/graphGeometry';
 import { graphStore } from '../stores/graphStore';
 import { uiStore } from '../stores/uiStore';
 
@@ -439,19 +439,18 @@ export function useGraphInteraction({ onMoveEnd, onResizeEnd, onRegionComplete, 
   function regionPreviewPoints() {
     const points = interaction.regionPoints;
     const shape = interaction.regionShape || 'polygon';
-    if (shape !== 'polygon') {
-      if (points.length < 2) return '';
-      const preview = shape === 'ellipse'
-        ? ellipsePreviewPoints(points[0], points[points.length - 1])
-        : bboxCornerPoints(points[0], points[points.length - 1]);
-      return preview.map((point) => `${point.x},${point.y}`).join(' ');
+    if (shape === 'polygon') {
+      if (!points.length) return null;
+      return { kind: 'path', d: smoothOpenPath(points) };
     }
-    if (!points.length) return '';
-    const closed = [...points];
-    if (closed.length > 1) {
-      closed.push(closed[0]);
-    }
-    return closed.map((point) => `${point.x},${point.y}`).join(' ');
+    if (points.length < 2) return null;
+    const preview = shape === 'ellipse'
+      ? ellipsePreviewPoints(points[0], points[points.length - 1])
+      : bboxCornerPoints(points[0], points[points.length - 1]);
+    return {
+      kind: 'poly',
+      points: preview.map((point) => `${point.x},${point.y}`).join(' '),
+    };
   }
 
   return {

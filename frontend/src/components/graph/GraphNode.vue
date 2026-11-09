@@ -13,6 +13,7 @@
         'node--selected': selected,
         'node--connect-source': connectSource,
         'node--missing': node.missing,
+        'node--photo': photoUrl,
       }"
       :style="nodeStyle"
     >
@@ -74,6 +75,7 @@ import { formatDate } from '../../utils/formatters';
 import { isImageNode, nodeAppearance, readableOn } from '../../utils/nodeAppearance';
 import { parseTags } from '../../utils/tags';
 import { uiStore } from '../../stores/uiStore';
+import { graphStore } from '../../stores/graphStore';
 import { useElectron } from '../../composables/useElectron';
 import TypeIcon from '../common/TypeIcon.vue';
 
@@ -107,7 +109,9 @@ const nodePosition = computed(() => ({
 const nodeTags = computed(() => parseTags(props.node.tags).slice(0, 4));
 
 const contentScale = computed(() => {
-  const scale = Math.min(nodeWidth.value / NODE_WIDTH, nodeHeight.value / NODE_HEIGHT);
+  const zoom = graphStore.view.scale || 1;
+  const zoomComp = Math.min(1.35, Math.max(0.75, 1 / zoom));
+  const scale = Math.min(nodeWidth.value / NODE_WIDTH, nodeHeight.value / NODE_HEIGHT) * zoomComp;
   return Math.min(2.5, Math.max(0.5, scale));
 });
 
@@ -330,5 +334,13 @@ function onDoubleClick() {
   border-right: 2px solid var(--ls-text-dim);
   border-bottom: 2px solid var(--ls-text-dim);
   cursor: nwse-resize;
+}
+
+.node--photo .node__title,
+.node--photo .node__content,
+.node--photo .node__meta,
+.node--photo .node__meta-label,
+.node--photo .node__tag {
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9), 0 0 10px rgba(0, 0, 0, 0.55);
 }
 </style>

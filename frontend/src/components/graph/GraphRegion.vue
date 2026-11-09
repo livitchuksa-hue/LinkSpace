@@ -30,10 +30,10 @@
       @pointerdown.stop="$emit('fill-press', $event)"
       @click.stop="$emit('select')"
     />
-    <polygon
+    <path
       v-else
       class="region__fill"
-      :points="pointsAttribute"
+      :d="smoothPath"
       :fill="region.color || '#ffffff'"
       fill-opacity="0.16"
       @pointerdown.stop="$emit('fill-press', $event)"
@@ -63,10 +63,10 @@
       :stroke="outlineColor"
       @pointerdown.stop="$emit('stroke-press', $event)"
     />
-    <polyline
+    <path
       v-else
       class="region__stroke"
-      :points="pointsAttribute"
+      :d="smoothPath"
       fill="none"
       :stroke="outlineColor"
       @pointerdown.stop="$emit('stroke-press', $event)"
@@ -106,8 +106,7 @@
     <text
       v-if="region.name"
       class="region__label"
-      :x="labelPoint.x"
-      :y="labelPoint.y"
+      :transform="labelTransform"
     >
       {{ region.name }}
     </text>
@@ -117,6 +116,8 @@
 <script setup>
 import { computed } from 'vue';
 import { uiStore } from '../../stores/uiStore';
+import { graphStore } from '../../stores/graphStore';
+import { smoothClosedPath } from '../../utils/graphGeometry';
 
 const props = defineProps({
   region: { type: Object, required: true },
@@ -180,7 +181,7 @@ const midpoints = computed(() => points.value.map((point, index) => {
   };
 }));
 
-const pointsAttribute = computed(() => points.value.map((p) => `${p.x},${p.y}`).join(' '));
+const smoothPath = computed(() => smoothClosedPath(points.value));
 
 const outlineColor = computed(() => {
   if (props.selected) return '#ffffff';
@@ -198,6 +199,15 @@ const labelPoint = computed(() => {
     y: sum.y / points.value.length,
   };
 });
+
+const labelScale = computed(() => {
+  const zoom = graphStore.view.scale || 1;
+  return Math.min(3.5, Math.max(0.5, 1 / zoom));
+});
+
+const labelTransform = computed(() =>
+  `translate(${labelPoint.value.x} ${labelPoint.value.y}) scale(${labelScale.value})`,
+);
 </script>
 
 <style scoped>
@@ -253,6 +263,7 @@ const labelPoint = computed(() => {
   font-size: 12px;
   font-weight: 600;
   text-anchor: middle;
+  dominant-baseline: central;
   paint-order: stroke;
   stroke: #0a0a0a;
   stroke-width: 4px;

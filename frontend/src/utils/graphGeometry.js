@@ -42,6 +42,43 @@ export function pointInPolygon(point, polygon) {
   return inside;
 }
 
+function catmullRomSegment(p0, p1, p2, p3) {
+  const c1x = p1.x + (p2.x - p0.x) / 6;
+  const c1y = p1.y + (p2.y - p0.y) / 6;
+  const c2x = p2.x - (p3.x - p1.x) / 6;
+  const c2y = p2.y - (p3.y - p1.y) / 6;
+  return `C ${c1x} ${c1y}, ${c2x} ${c2y}, ${p2.x} ${p2.y}`;
+}
+
+export function smoothClosedPath(points) {
+  if (!Array.isArray(points) || points.length < 3) return '';
+  const count = points.length;
+  const at = (index) => points[((index % count) + count) % count];
+  let d = `M ${points[0].x} ${points[0].y}`;
+  for (let i = 0; i < count; i += 1) {
+    d += ` ${catmullRomSegment(at(i - 1), at(i), at(i + 1), at(i + 2))}`;
+  }
+  return `${d} Z`;
+}
+
+export function smoothOpenPath(points) {
+  if (!Array.isArray(points) || !points.length) return '';
+  if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
+  if (points.length === 2) {
+    return `M ${points[0].x} ${points[0].y} L ${points[1].x} ${points[1].y}`;
+  }
+  const count = points.length;
+  let d = `M ${points[0].x} ${points[0].y}`;
+  for (let i = 0; i < count - 1; i += 1) {
+    const p0 = points[Math.max(0, i - 1)];
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    const p3 = points[Math.min(count - 1, i + 2)];
+    d += ` ${catmullRomSegment(p0, p1, p2, p3)}`;
+  }
+  return d;
+}
+
 export function clientToWorld(clientX, clientY, rect, view) {
   return {
     x: (clientX - rect.left - view.x) / view.scale,

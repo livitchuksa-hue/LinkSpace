@@ -32,9 +32,14 @@
           @context="onRegionContext"
         />
         <polygon
-          v-if="regionPreview"
+          v-if="regionPreview?.kind === 'poly'"
           class="preview"
-          :points="regionPreview"
+          :points="regionPreview.points"
+        />
+        <path
+          v-else-if="regionPreview?.kind === 'path'"
+          class="preview"
+          :d="regionPreview.d"
         />
         <GraphEdge
           v-for="edge in sortedConnections"
@@ -175,7 +180,7 @@ const worldStyle = computed(() => ({
 }));
 
 const regionPreview = computed(() => (
-  props.tool === 'region' ? regionPreviewPoints() : ''
+  props.tool === 'region' ? regionPreviewPoints() : null
 ));
 
 function handleWheel(event) {
