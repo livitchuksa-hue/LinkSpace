@@ -106,4 +106,15 @@ export function objectMatchesFilter(object, filter) {
   return true;
 }
 
+/**
+ * Затемняется ли связь: да, только если ОБА конца не подходят под фильтр.
+ * Связь, ведущая хотя бы к одному подошедшему объекту, остаётся яркой.
+ */
+export function edgeDimmed(connection, objects, filter) {
+  if (!filterActive(filter)) return false;
+  const source = (objects || []).find((item) => item.id === connection?.sourceId);
+  const target = (objects || []).find((item) => item.id === connection?.targetId);
+  return !(objectMatchesFilter(source, filter) || objectMatchesFilter(target, filter));
+}
+
 export { normalizeFilter };

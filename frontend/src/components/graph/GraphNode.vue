@@ -109,8 +109,8 @@ const props = defineProps({
 const emit = defineEmits(['move-start', 'select', 'edit', 'resize-start', 'context']);
 
 const appearance = computed(() => nodeAppearance(props.node));
-const nodeWidth = computed(() => Math.max(140, Number(props.node.width) || NODE_WIDTH));
-const nodeHeight = computed(() => Math.max(80, Number(props.node.height) || NODE_HEIGHT));
+const nodeWidth = computed(() => Math.max(180, Number(props.node.width) || NODE_WIDTH));
+const nodeHeight = computed(() => Math.max(110, Number(props.node.height) || NODE_HEIGHT));
 
 const nodePosition = computed(() => ({
   width: `${nodeWidth.value}px`,

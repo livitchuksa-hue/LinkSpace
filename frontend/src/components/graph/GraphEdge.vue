@@ -1,5 +1,5 @@
 <template>
-  <g v-if="source && target" class="edge" :class="{ 'edge--selected': selected }" @pointerdown.stop @click.stop="$emit('select')" @contextmenu.stop.prevent="$emit('context', $event, edge)">
+  <g v-if="source && target" class="edge" :class="{ 'edge--selected': selected, 'edge--dimmed': dimmed }" @pointerdown.stop @click.stop="$emit('select')" @contextmenu.stop.prevent="$emit('context', $event, edge)">
     <line
       class="edge__hit"
       :x1="sourceCenter.x"
@@ -30,6 +30,8 @@
 import { computed } from 'vue';
 import { midpoint, nodeCenter } from '../../utils/graphGeometry';
 import { graphStore } from '../../stores/graphStore';
+import { uiStore } from '../../stores/uiStore';
+import { edgeDimmed } from '../../utils/filters';
 
 const props = defineProps({
   edge: { type: Object, required: true },
@@ -45,6 +47,7 @@ const sourceCenter = computed(() => nodeCenter(source.value || { x: 0, y: 0 }));
 const targetCenter = computed(() => nodeCenter(target.value || { x: 0, y: 0 }));
 const labelPoint = computed(() => midpoint(sourceCenter.value, targetCenter.value));
 const edgeColor = computed(() => props.edge.color || '#8f8f8f');
+const dimmed = computed(() => edgeDimmed(props.edge, props.nodes, uiStore.filter));
 
 const labelScale = computed(() => {
   const zoom = graphStore.view.scale || 1;
@@ -59,6 +62,11 @@ const labelTransform = computed(() =>
 <style scoped>
 .edge {
   cursor: pointer;
+  transition: opacity 0.25s ease;
+}
+
+.edge--dimmed {
+  opacity: 0.15;
 }
 
 .edge__hit {

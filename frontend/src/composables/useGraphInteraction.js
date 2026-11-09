@@ -5,10 +5,10 @@ import { uiStore } from '../stores/uiStore';
 
 const REGION_SNAP_DISTANCE = 12;
 const MIN_REGION_POINTS = 3;
-const MIN_NODE_WIDTH = 140;
-const MIN_NODE_HEIGHT = 80;
-const MAX_NODE_WIDTH = 520;
-const MAX_NODE_HEIGHT = 420;
+const MIN_NODE_WIDTH = 180;
+const MIN_NODE_HEIGHT = 110;
+const MAX_NODE_WIDTH = 760;
+const MAX_NODE_HEIGHT = 600;
 
 function distance(a, b) {
   return Math.hypot(b.x - a.x, b.y - a.y);
@@ -127,7 +127,7 @@ export function useGraphInteraction({ onMoveEnd, onResizeEnd, onRegionComplete, 
     const rect = getRect(root);
     const world = clientToWorld(event.clientX, event.clientY, rect, graphStore.view);
     const factor = event.deltaY > 0 ? 0.92 : 1.08;
-    const nextScale = clamp(graphStore.view.scale * factor, 0.35, 2.4);
+    const nextScale = clamp(graphStore.view.scale * factor, 0.2, 3.2);
     graphStore.view.x = event.clientX - rect.left - world.x * nextScale;
     graphStore.view.y = event.clientY - rect.top - world.y * nextScale;
     graphStore.view.scale = nextScale;

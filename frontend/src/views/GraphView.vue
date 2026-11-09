@@ -69,18 +69,33 @@
 
         <div v-if="allTags.length" class="filter-bar__group">
           <span class="filter-bar__caption">Теги</span>
-          <div class="filter-bar__chips">
+          <div class="filter-dropdown">
             <button
-              v-for="tag in allTags"
-              :key="tag.name"
               class="filter-chip"
-              :class="{ 'filter-chip--on': uiStore.filter.tags.includes(tagKey(tag.name)) }"
-              :style="uiStore.filter.tags.includes(tagKey(tag.name)) ? { background: tag.color, color: readableOn(tag.color) } : {}"
+              :class="{ 'filter-chip--on': uiStore.filter.tags.length > 0 }"
               type="button"
-              @click="toggleFilterTag(tag.name)"
+              @click="tagsOpen = !tagsOpen"
             >
-              {{ tag.name }}
+              {{ uiStore.filter.tags.length ? `Теги: ${uiStore.filter.tags.length}` : 'Все теги' }}
             </button>
+            <template v-if="tagsOpen">
+              <div class="filter-dropdown__backdrop" @click="tagsOpen = false"></div>
+              <div class="filter-dropdown__list">
+                <label
+                  v-for="tag in allTags"
+                  :key="tag.name"
+                  class="filter-dropdown__item"
+                >
+                  <input
+                    type="checkbox"
+                    :checked="uiStore.filter.tags.includes(tagKey(tag.name))"
+                    @change="toggleFilterTag(tag.name)"
+                  />
+                  <span class="filter-dropdown__dot" :style="{ background: tag.color }"></span>
+                  <span class="filter-dropdown__name">{{ tag.name }}</span>
+                </label>
+              </div>
+            </template>
           </div>
         </div>
 
@@ -103,7 +118,7 @@
         type="button"
         @click="resetFilter"
       >
-        Сбросить · {{ matchedCount }}/{{ graphStore.objects.length }}
+        Сбросить · найдено {{ matchedCount }} из {{ graphStore.objects.length }}
       </button>
       </div>
     </div>
@@ -171,7 +186,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import GraphCanvas from '../components/graph/GraphCanvas.vue';
 import BaseButton from '../components/common/BaseButton.vue';
 import BaseModal from '../components/common/BaseModal.vue';
@@ -185,7 +200,6 @@ import {
   OBJECT_TYPES,
   objectMatchesFilter,
 } from '../utils/filters';
-import { readableOn } from '../utils/nodeAppearance';
 import { tagKey, tagRegistry } from '../utils/tags';
 import { typeLabel } from '../utils/formatters';
 import { useGraph } from '../composables/useGraph';
@@ -212,6 +226,7 @@ const regionShapeOptions = [
   { value: 'ellipse', label: 'Эллипс' },
 ];
 
+const tagsOpen = ref(false);
 const allTags = computed(() => tagRegistry(graphStore.objects));
 const allDisks = computed(() => [
   ...new Set(graphStore.objects.map((item) => item.disk).filter(Boolean)),
@@ -272,6 +287,7 @@ function handleSelectNode(node) {
     createConnection(sourceId, node.id)
       .then(() => {
         uiStore.connectSourceId = null;
+        setTool('select');
         uiStore.setStatus('Связь создана');
       })
       .catch((error) => uiStore.setStatus(error.message || 'Не удалось создать связь'));
@@ -537,6 +553,61 @@ onMounted(async () => {
 .filter-bar__sep {
   color: var(--ls-text-dim);
   font-size: 0.75rem;
+}
+
+.filter-dropdown {
+  position: relative;
+}
+
+.filter-dropdown__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 41;
+}
+
+.filter-dropdown__list {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 42;
+  min-width: 180px;
+  max-height: 260px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 4px;
+  background: var(--ls-bg-elevated);
+  border: 1px solid var(--ls-border);
+  border-radius: var(--ls-radius-md, 8px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.filter-dropdown__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: var(--ls-text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.filter-dropdown__item:hover {
+  background: var(--ls-bg-soft);
+}
+
+.filter-dropdown__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: 0 0 9px;
+}
+
+.filter-dropdown__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .welcome {

@@ -1,5 +1,5 @@
-export const NODE_WIDTH = 196;
-export const NODE_HEIGHT = 112;
+export const NODE_WIDTH = 240;
+export const NODE_HEIGHT = 140;
 
 export function distance(a, b) {
   const dx = b.x - a.x;
