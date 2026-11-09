@@ -6,6 +6,8 @@ public class Connection {
     private Long sourceId;
     private Long targetId;
     private String label;
+    private String color;
+    private Integer zIndex;
 
     public Long getId() {
         return id;
@@ -37,5 +39,21 @@ public class Connection {
 
     public void setLabel(String label) {
         this.label = label;
+    }
+
+    public String getColor() {
+        return color;
+    }
+
+    public void setColor(String color) {
+        this.color = color;
+    }
+
+    public Integer getZIndex() {
+        return zIndex;
+    }
+
+    public void setZIndex(Integer zIndex) {
+        this.zIndex = zIndex;
     }
 }

@@ -22,6 +22,9 @@ public class RegionRepository {
         region.setName(rs.getString("name"));
         region.setColor(rs.getString("color"));
         region.setCoordinates(rs.getString("coordinates"));
+        region.setShape(rs.getString("shape"));
+        int zIndex = rs.getInt("z_index");
+        region.setZIndex(rs.wasNull() ? null : zIndex);
         return region;
     };
 
@@ -46,12 +49,14 @@ public class RegionRepository {
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(conn -> {
             PreparedStatement ps = conn.prepareStatement(
-                    "INSERT INTO regions (name, color, coordinates) VALUES (?, ?, ?)",
+                    "INSERT INTO regions (name, color, coordinates, shape, z_index) VALUES (?, ?, ?, ?, ?)",
                     Statement.RETURN_GENERATED_KEYS
             );
             ps.setString(1, region.getName());
             ps.setString(2, region.getColor());
             ps.setString(3, region.getCoordinates());
+            ps.setString(4, region.getShape());
+            setZIndex(ps, 5, region.getZIndex());
             return ps;
         }, keyHolder);
 
@@ -63,14 +68,27 @@ public class RegionRepository {
     }
 
     public Region update(Region region) {
-        jdbcTemplate.update(
-                "UPDATE regions SET name = ?, color = ?, coordinates = ? WHERE id = ?",
-                region.getName(),
-                region.getColor(),
-                region.getCoordinates(),
-                region.getId()
-        );
+        jdbcTemplate.update(connection -> {
+            PreparedStatement ps = connection.prepareStatement(
+                    "UPDATE regions SET name = ?, color = ?, coordinates = ?, shape = ?, z_index = ? WHERE id = ?"
+            );
+            ps.setString(1, region.getName());
+            ps.setString(2, region.getColor());
+            ps.setString(3, region.getCoordinates());
+            ps.setString(4, region.getShape());
+            setZIndex(ps, 5, region.getZIndex());
+            ps.setLong(6, region.getId());
+            return ps;
+        });
         return region;
+    }
+
+    private void setZIndex(PreparedStatement ps, int index, Integer zIndex) throws java.sql.SQLException {
+        if (zIndex == null) {
+            ps.setObject(index, null);
+        } else {
+            ps.setInt(index, zIndex);
+        }
     }
 
     public boolean deleteById(Long id) {

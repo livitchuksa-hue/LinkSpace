@@ -1,19 +1,21 @@
 <template>
-  <div v-if="modelValue" class="modal" role="dialog" aria-modal="true">
-    <div class="modal__backdrop" @click="close"></div>
-    <div class="modal__panel">
-      <header class="modal__header">
-        <h3>{{ title }}</h3>
-        <button class="modal__close" type="button" aria-label="Закрыть" @click="close">×</button>
-      </header>
-      <div class="modal__body">
-        <slot />
+  <Teleport to="body">
+    <div v-if="modelValue" class="modal" role="dialog" aria-modal="true">
+      <div class="modal__backdrop" @click="close"></div>
+      <div class="modal__panel">
+        <header class="modal__header">
+          <h3>{{ title }}</h3>
+          <button class="modal__close" type="button" aria-label="Закрыть" @click="close">×</button>
+        </header>
+        <div class="modal__body">
+          <slot />
+        </div>
+        <footer v-if="$slots.footer" class="modal__footer">
+          <slot name="footer" />
+        </footer>
       </div>
-      <footer v-if="$slots.footer" class="modal__footer">
-        <slot name="footer" />
-      </footer>
     </div>
-  </div>
+  </Teleport>
 </template>
 
 <script setup>
@@ -46,7 +48,10 @@ function close() {
 
 .modal__panel {
   position: relative;
-  width: min(480px, calc(100% - 32px));
+  width: min(520px, calc(100% - 32px));
+  max-height: calc(100vh - 48px);
+  display: flex;
+  flex-direction: column;
   background: var(--ls-bg-elevated);
   border: 1px solid var(--ls-border);
   border-radius: var(--ls-radius-lg);
@@ -71,6 +76,11 @@ function close() {
   color: var(--ls-text-muted);
   font-size: 1.4rem;
   line-height: 1;
+}
+
+.modal__body {
+  overflow: auto;
+  min-height: 0;
 }
 
 .modal__footer {

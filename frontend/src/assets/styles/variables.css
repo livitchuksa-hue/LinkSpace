@@ -1,25 +1,23 @@
 :root {
-  /* Brand / surfaces */
-  --ls-bg: #0f1115;
-  --ls-bg-elevated: #161a22;
-  --ls-bg-panel: #12161e;
-  --ls-bg-soft: #1a2030;
-  --ls-border: #2a3142;
-  --ls-border-subtle: #222836;
+  --ls-bg: #0a0a0a;
+  --ls-bg-elevated: #111111;
+  --ls-bg-panel: #0e0e0e;
+  --ls-bg-soft: #171717;
+  --ls-border: #2a2a2a;
+  --ls-border-subtle: #1c1c1c;
+  --ls-node: #141414;
+  --ls-node-selected: #1d1d1d;
 
-  /* Text */
-  --ls-text: #e8ecf4;
-  --ls-text-muted: #9aa3b5;
-  --ls-text-dim: #6b7385;
+  --ls-text: #f2f2f2;
+  --ls-text-muted: #a3a3a3;
+  --ls-text-dim: #6e6e6e;
 
-  /* Accent */
-  --ls-accent: #4f8cff;
-  --ls-accent-hover: #6aa0ff;
-  --ls-accent-soft: rgba(79, 140, 255, 0.16);
-  --ls-success: #3ecf8e;
-  --ls-danger: #ff6b7a;
+  --ls-accent: #ffffff;
+  --ls-accent-hover: #d6d6d6;
+  --ls-accent-soft: rgba(255, 255, 255, 0.08);
+  --ls-success: #d0d0d0;
+  --ls-danger: #cfcfcf;
 
-  /* Spacing */
   --ls-space-1: 4px;
   --ls-space-2: 8px;
   --ls-space-3: 12px;
@@ -28,17 +26,14 @@
   --ls-space-6: 32px;
   --ls-space-7: 48px;
 
-  /* Radius */
-  --ls-radius-sm: 6px;
-  --ls-radius-md: 10px;
+  --ls-radius-sm: 8px;
+  --ls-radius-md: 12px;
   --ls-radius-lg: 16px;
 
-  /* Layout */
-  --ls-header-height: 56px;
+  --ls-header-height: 52px;
   --ls-sidebar-width: 240px;
-  --ls-inspector-width: 280px;
+  --ls-inspector-width: 300px;
 
-  /* Typography */
   --ls-font: "Segoe UI", "Candara", "Trebuchet MS", sans-serif;
   --ls-font-display: "Segoe UI Semibold", "Segoe UI", sans-serif;
 }

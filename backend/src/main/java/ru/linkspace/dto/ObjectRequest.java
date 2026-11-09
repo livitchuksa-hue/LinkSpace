@@ -2,6 +2,7 @@ package ru.linkspace.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import java.time.Instant;
 
 public class ObjectRequest {
 
@@ -15,6 +16,16 @@ public class ObjectRequest {
     private String content;
     private String path;
     private String url;
+    private String disk;
+    private Long fileSize;
+    private Instant fileCreatedAt;
+    private Instant fileModifiedAt;
+    private Instant lastOpenedAt;
+    private String color;
+    private Double width;
+    private Double height;
+    private String tags;
+    private Integer zIndex;
 
     @NotNull
     private Double x = 0.0;
@@ -70,6 +81,46 @@ public class ObjectRequest {
         this.url = url;
     }
 
+    public String getDisk() {
+        return disk;
+    }
+
+    public void setDisk(String disk) {
+        this.disk = disk;
+    }
+
+    public Long getFileSize() {
+        return fileSize;
+    }
+
+    public void setFileSize(Long fileSize) {
+        this.fileSize = fileSize;
+    }
+
+    public Instant getFileCreatedAt() {
+        return fileCreatedAt;
+    }
+
+    public void setFileCreatedAt(Instant fileCreatedAt) {
+        this.fileCreatedAt = fileCreatedAt;
+    }
+
+    public Instant getFileModifiedAt() {
+        return fileModifiedAt;
+    }
+
+    public void setFileModifiedAt(Instant fileModifiedAt) {
+        this.fileModifiedAt = fileModifiedAt;
+    }
+
+    public Instant getLastOpenedAt() {
+        return lastOpenedAt;
+    }
+
+    public void setLastOpenedAt(Instant lastOpenedAt) {
+        this.lastOpenedAt = lastOpenedAt;
+    }
+
     public Double getX() {
         return x;
     }
@@ -84,5 +135,45 @@ public class ObjectRequest {
 
     public void setY(Double y) {
         this.y = y;
+    }
+
+    public String getColor() {
+        return color;
+    }
+
+    public void setColor(String color) {
+        this.color = color;
+    }
+
+    public Double getWidth() {
+        return width;
+    }
+
+    public void setWidth(Double width) {
+        this.width = width;
+    }
+
+    public Double getHeight() {
+        return height;
+    }
+
+    public void setHeight(Double height) {
+        this.height = height;
+    }
+
+    public String getTags() {
+        return tags;
+    }
+
+    public void setTags(String tags) {
+        this.tags = tags;
+    }
+
+    public Integer getZIndex() {
+        return zIndex;
+    }
+
+    public void setZIndex(Integer zIndex) {
+        this.zIndex = zIndex;
     }
 }

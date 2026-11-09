@@ -9,6 +9,11 @@ export const graphStore = reactive({
   regions: [],
   loading: false,
   error: null,
+  view: {
+    x: 80,
+    y: 60,
+    scale: 1,
+  },
 });
 
 export function useGraphStore() {
@@ -20,12 +25,53 @@ export function useGraphStore() {
     graphStore.objects.push(object);
   }
 
+  function patchObject(id, patch) {
+    const index = graphStore.objects.findIndex((item) => item.id === id);
+    if (index === -1) return;
+    graphStore.objects[index] = { ...graphStore.objects[index], ...patch };
+  }
+
+  function removeObject(id) {
+    graphStore.objects = graphStore.objects.filter((item) => item.id !== id);
+    graphStore.connections = graphStore.connections.filter(
+      (item) => item.sourceId !== id && item.targetId !== id,
+    );
+  }
+
   function setConnections(connections) {
     graphStore.connections = connections;
   }
 
+  function addConnection(connection) {
+    graphStore.connections.push(connection);
+  }
+
+  function removeConnection(id) {
+    graphStore.connections = graphStore.connections.filter((item) => item.id !== id);
+  }
+
+  function patchConnection(id, patch) {
+    const index = graphStore.connections.findIndex((item) => item.id === id);
+    if (index === -1) return;
+    graphStore.connections[index] = { ...graphStore.connections[index], ...patch };
+  }
+
   function setRegions(regions) {
     graphStore.regions = regions;
+  }
+
+  function addRegion(region) {
+    graphStore.regions.push(region);
+  }
+
+  function removeRegion(id) {
+    graphStore.regions = graphStore.regions.filter((item) => item.id !== id);
+  }
+
+  function patchRegion(id, patch) {
+    const index = graphStore.regions.findIndex((item) => item.id === id);
+    if (index === -1) return;
+    graphStore.regions[index] = { ...graphStore.regions[index], ...patch };
   }
 
   function setLoading(value) {
@@ -40,8 +86,16 @@ export function useGraphStore() {
     graphStore,
     setObjects,
     addObject,
+    patchObject,
+    removeObject,
     setConnections,
+    addConnection,
+    removeConnection,
+    patchConnection,
     setRegions,
+    addRegion,
+    removeRegion,
+    patchRegion,
     setLoading,
     setError,
   };

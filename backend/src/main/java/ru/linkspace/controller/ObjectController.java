@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import ru.linkspace.dto.ObjectRequest;
 import ru.linkspace.dto.ObjectResponse;
+import ru.linkspace.dto.PositionRequest;
 import ru.linkspace.service.ObjectService;
 
 @RestController
@@ -45,6 +46,16 @@ public class ObjectController {
     @PutMapping("/{id}")
     public ObjectResponse update(@PathVariable Long id, @Valid @RequestBody ObjectRequest request) {
         return ObjectResponse.from(objectService.update(id, request));
+    }
+
+    @PutMapping("/{id}/position")
+    public ObjectResponse updatePosition(@PathVariable Long id, @Valid @RequestBody PositionRequest request) {
+        return ObjectResponse.from(objectService.updatePosition(id, request));
+    }
+
+    @PostMapping("/{id}/open")
+    public ObjectResponse markOpened(@PathVariable Long id) {
+        return ObjectResponse.from(objectService.markOpened(id));
     }
 
     @DeleteMapping("/{id}")

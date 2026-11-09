@@ -2,7 +2,7 @@
 
 Настольное приложение для организации информации в едином интерактивном графе.
 
-Пользователь может добавлять заметки, локальные файлы и папки, а также интернет-ссылки. Каждый объект отображается как узел графа: узлы можно перемещать, связывать и объединять в визуальные тематические области. Данные хранятся локально и восстанавливаются после перезапуска.
+Пользователь может добавлять заметки, локальные файлы и папки, а также интернет-ссылки. Каждый объект отображается как узел графа: узлы можно перемещать, связывать и визуально группировать в тематические области. Данные хранятся локально в SQLite и восстанавливаются после перезапуска.
 
 ## Технологии
 
@@ -11,13 +11,13 @@
 | Frontend | HTML5, CSS3, JavaScript, Vue 3, Vite |
 | Desktop | Electron (Main Process, Preload, IPC) |
 | Backend | Java 21, Spring Boot 3.x, Maven, REST API |
-| Database | SQLite + SQLite JDBC + Spring JDBC / JdbcTemplate |
+| Database | SQLite + SQLite JDBC + Spring JDBC |
 
 ## Требования к окружению
 
 - **Node.js** 18+ и **npm**
-- **Java JDK 21+** (проект компилируется под Java 21)
-- Maven Wrapper уже включён в `backend/` (отдельная установка Maven не обязательна)
+- **Java JDK 21+** (проект компилируется под Java 21; более новые JDK могут работать, но для стабильной проверки лучше использовать 21)
+- Maven Wrapper уже включён в `backend/` — отдельная установка Maven не обязательна
 
 ## Структура проекта
 
@@ -28,112 +28,97 @@ Linkspace/
 └── docs/       # Архитектура и API
 ```
 
-Подробнее: [docs/architecture.md](docs/architecture.md), [docs/api.md](docs/api.md).
-
 ## Установка зависимостей
 
-### Frontend
-
-```bash
+```powershell
 cd frontend
 npm install
 ```
 
-### Backend
+Зависимости backend Maven скачиваются автоматически при первой сборке или запуске через `backend/mvnw.cmd`.
 
-Зависимости Maven скачиваются автоматически при первой сборке через Maven Wrapper.
+## Запуск приложения
 
-## Запуск frontend (Vite)
+### Рекомендуемый способ: Electron + Vite + backend автоматически
 
-```bash
-cd frontend
-npm run dev
-```
-
-Приложение будет доступно по адресу `http://localhost:5173`.
-
-Перед запуском скопируйте переменные окружения:
-
-```bash
-copy .env.example .env
-```
-
-По умолчанию API: `http://localhost:8080/api`.
-
-## Запуск backend
-
-```bash
-cd backend
-.\mvnw.cmd spring-boot:run
-```
-
-Сервер стартует на порту **8080**. Файл БД: `backend/data/linkspace.db` (создаётся автоматически).
-
-## Запуск Electron
-
-Сначала убедитесь, что Vite-сервер доступен (скрипт ниже запускает его сам):
-
-```bash
+```powershell
 cd frontend
 npm run electron:dev
 ```
 
-Команда параллельно поднимает Vite и Electron. В режиме разработки окно открывает `http://localhost:5173`.
+Команда:
 
-Backend в режиме разработки запускается отдельно через Maven Wrapper (см. выше). В Electron заложена точка расширения для будущего автоматического запуска Java-сервера.
+1. запускает Vite dev-сервер на `http://127.0.0.1:5173`;
+2. запускает Electron;
+3. автоматически поднимает Spring Boot backend, если он ещё не запущен;
+4. при закрытии окна останавливает backend, если его запустил сам Electron.
 
-## Команды сборки
+В режиме разработки backend запускается через Maven Wrapper, поэтому изменения в Java-коде подхватываются после перезапуска `electron:dev`.
 
-### Frontend
+### Production-режим Electron
 
-```bash
-cd frontend
-npm run build
-```
+Сначала соберите frontend и backend:
 
-### Backend
-
-```bash
+```powershell
 cd backend
-.\mvnw.cmd clean package -DskipTests
-```
+.\mvnw.cmd -DskipTests package
 
-JAR появится в `backend/target/`.
-
-### Electron (production-сборка UI)
-
-```bash
-cd frontend
+cd ..\frontend
 npm run build
 npm run electron
 ```
 
-Для упаковки дистрибутива (когда будет настроено):
+В этом режиме Electron использует собранный `backend/target/linkspace-backend-0.1.0-SNAPSHOT.jar`, если он существует.
 
-```bash
+### Только frontend в браузере
+
+```powershell
 cd frontend
-npm run electron:build
+npm run dev
 ```
 
-## Полезные npm-скрипты
+Затем в отдельном терминале запустите backend:
 
-| Скрипт | Описание |
-|--------|----------|
+```powershell
+cd backend
+.\mvnw.cmd spring-boot:run
+```
+
+Frontend по умолчанию обращается к `http://127.0.0.1:8080/api`.
+
+## Полезные команды
+
+| Команда | Описание |
+|---------|----------|
 | `npm run dev` | Vite dev-сервер |
-| `npm run build` | Сборка frontend |
-| `npm run preview` | Предпросмотр сборки |
-| `npm run electron` | Electron против уже собранного `dist/` |
-| `npm run electron:dev` | Vite + Electron |
-| `npm run electron:build` | Сборка UI и упаковка Electron |
+| `npm run build` | Сборка frontend в `dist/` |
+| `npm run electron` | Electron против собранного `dist/` |
+| `npm run electron:dev` | Vite + Electron + автоматический backend |
+| `.\mvnw.cmd spring-boot:run` | Backend вручную |
+| `.\mvnw.cmd -DskipTests package` | Сборка backend JAR |
 
-## Текущий статус
+## Данные
 
-Каркас проекта готов к дальнейшей разработке. Реализованы:
+SQLite-файл создаётся здесь:
 
-- структура каталогов;
-- стартовый экран Linkspace;
-- безопасный Electron preload API;
-- REST-заготовки и схема SQLite;
-- документация по архитектуре и API.
+```text
+backend/data/linkspace.db
+```
 
-Пока не реализованы: полноценный интерактивный граф, полная бизнес-логика и все REST-операции.
+В базе хранятся объекты, связи, области, координаты узлов, настройки отображения графа и дата последнего открытия объекта.
+
+## Текущий статус MVP
+
+Реализовано:
+
+- интерактивный SVG-граф с панорамированием, масштабированием и перетаскиванием узлов;
+- заметки, локальные файлы, папки и ссылки;
+- создание, редактирование, удаление и перемещение объектов;
+- связи между узлами с названиями;
+- полигональные визуальные области с названием и монохромной заливкой;
+- диалоги выбора файлов/папок и drag-and-drop;
+- открытие файлов, папок и URL через Electron IPC;
+- индикация отсутствующих файлов;
+- правая панель свойств, левая панель статистики и экран настроек;
+- сохранение вида графа и видимых полей узлов в SQLite;
+- автоматический запуск backend из Electron.

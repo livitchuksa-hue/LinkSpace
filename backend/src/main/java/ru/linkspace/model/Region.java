@@ -6,6 +6,8 @@ public class Region {
     private String name;
     private String color;
     private String coordinates;
+    private String shape;
+    private Integer zIndex;
 
     public Long getId() {
         return id;
@@ -37,5 +39,21 @@ public class Region {
 
     public void setCoordinates(String coordinates) {
         this.coordinates = coordinates;
+    }
+
+    public String getShape() {
+        return shape;
+    }
+
+    public void setShape(String shape) {
+        this.shape = shape;
+    }
+
+    public Integer getZIndex() {
+        return zIndex;
+    }
+
+    public void setZIndex(Integer zIndex) {
+        this.zIndex = zIndex;
     }
 }

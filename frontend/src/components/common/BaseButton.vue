@@ -21,14 +21,15 @@ defineProps({
 <style scoped>
 .base-btn {
   border: 1px solid transparent;
-  border-radius: var(--ls-radius-md);
-  padding: 10px 16px;
+  border-radius: 10px;
+  padding: 8px 14px;
   font-weight: 600;
+  font-size: 0.85rem;
   transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
 }
 
 .base-btn:disabled {
-  opacity: 0.55;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
@@ -37,21 +38,26 @@ defineProps({
 }
 
 .base-btn--primary {
-  background: var(--ls-accent);
-  color: #fff;
+  background: #fff;
+  color: #111;
 }
 
 .base-btn--primary:hover:not(:disabled) {
-  background: var(--ls-accent-hover);
+  background: #e8e8e8;
 }
 
 .base-btn--ghost {
   background: transparent;
-  border-color: var(--ls-border);
+  border-color: #2c2c2c;
   color: var(--ls-text);
 }
 
 .base-btn--ghost:hover:not(:disabled) {
-  background: var(--ls-bg-soft);
+  background: #161616;
+}
+
+.base-btn--active {
+  background: #fff;
+  color: #111;
 }
 </style>

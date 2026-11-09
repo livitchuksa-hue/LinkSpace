@@ -1,15 +1,15 @@
 /**
  * Обёртка над Preload API Electron.
- * В браузерном режиме Vite методы недоступны и возвращают null.
+ * В браузерном режиме Vite методы недоступны.
  */
 export function useElectron() {
   const bridge = typeof window !== 'undefined' ? window.linkspace : null;
-
   const isElectron = Boolean(bridge);
 
   async function selectFile() {
-    if (!bridge) return null;
-    return bridge.selectFile();
+    if (!bridge) return [];
+    const result = await bridge.selectFile();
+    return Array.isArray(result) ? result : result ? [result] : [];
   }
 
   async function selectFolder() {
@@ -22,10 +22,31 @@ export function useElectron() {
     return bridge.openPath(targetPath);
   }
 
+  async function openUrl(url) {
+    if (!bridge) {
+      window.open(url, '_blank', 'noopener');
+      return { ok: true };
+    }
+    return bridge.openUrl(url);
+  }
+
+  async function statPath(targetPath) {
+    if (!bridge) return { exists: false, path: targetPath };
+    return bridge.statPath(targetPath);
+  }
+
+  function getPathForFile(file) {
+    if (!bridge?.getPathForFile) return null;
+    return bridge.getPathForFile(file);
+  }
+
   return {
     isElectron,
     selectFile,
     selectFolder,
     openPath,
+    openUrl,
+    statPath,
+    getPathForFile,
   };
 }

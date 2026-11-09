@@ -7,17 +7,9 @@
     <nav class="nav">
       <button
         class="nav__btn"
-        :class="{ 'nav__btn--active': uiStore.currentView === 'graph' }"
+        :class="{ 'nav__btn--active': uiStore.settingsOpen }"
         type="button"
-        @click="setView('graph')"
-      >
-        Граф
-      </button>
-      <button
-        class="nav__btn"
-        :class="{ 'nav__btn--active': uiStore.currentView === 'settings' }"
-        type="button"
-        @click="setView('settings')"
+        @click="uiStore.settingsOpen = !uiStore.settingsOpen"
       >
         Настройки
       </button>
@@ -26,9 +18,7 @@
 </template>
 
 <script setup>
-import { uiStore, useUiStore } from '../../stores/uiStore';
-
-const { setView } = useUiStore();
+import { uiStore } from '../../stores/uiStore';
 </script>
 
 <style scoped>
@@ -38,9 +28,8 @@ const { setView } = useUiStore();
   justify-content: space-between;
   gap: var(--ls-space-4);
   padding: 0 var(--ls-space-5);
-  background: rgba(18, 22, 30, 0.92);
-  border-bottom: 1px solid var(--ls-border-subtle);
-  backdrop-filter: blur(8px);
+  background: #0b0b0b;
+  border-bottom: 1px solid var(--ls-border);
 }
 
 .brand {
@@ -50,19 +39,18 @@ const { setView } = useUiStore();
 }
 
 .brand__mark {
-  width: 14px;
-  height: 14px;
-  border-radius: 4px;
-  background: linear-gradient(135deg, var(--ls-accent), #7a5cff);
-  box-shadow: 0 0 0 4px var(--ls-accent-soft);
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: #fff;
 }
 
 .brand__title {
   margin: 0;
   font-family: var(--ls-font-display);
-  font-size: 1.15rem;
+  font-size: 1.05rem;
   font-weight: 650;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
 }
 
 .nav {
@@ -86,6 +74,5 @@ const { setView } = useUiStore();
 .nav__btn--active {
   color: var(--ls-text);
   border-color: var(--ls-border);
-  background: var(--ls-bg-soft);
 }
 </style>
