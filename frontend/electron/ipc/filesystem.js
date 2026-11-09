@@ -87,13 +87,13 @@ function registerFilesystemIpc() {
       return { ok: false, error: 'Path is required' };
     }
 
-    const MAX_BYTES = 256 * 1024;
+    const MAX_BYTES = 4 * 1024 * 1024;
     try {
       const stats = await fs.stat(targetPath);
       if (!stats.isFile()) return { ok: false, error: 'Not a file' };
       if (stats.size > MAX_BYTES) return { ok: false, error: 'File too large' };
       const text = await fs.readFile(targetPath, 'utf8');
-      return { ok: true, text: text.slice(0, 20000) };
+      return { ok: true, text: text.slice(0, 1000000) };
     } catch (error) {
       return { ok: false, error: error.message };
     }

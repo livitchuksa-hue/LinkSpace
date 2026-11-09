@@ -8,8 +8,33 @@
       <p v-if="linkPreviewInfo.title" class="details__link-title">{{ linkPreviewInfo.title }}</p>
       <p v-if="linkPreviewInfo.description" class="details__link-desc">{{ linkPreviewInfo.description }}</p>
     </div>
-    <div v-if="contentView.html" class="details__content details__content--md" v-html="contentView.html"></div>
-    <p v-else-if="contentView.text" class="details__content">{{ contentView.text }}</p>
+    <template v-if="hasContent">
+      <div
+        v-if="!contentTruncated"
+        class="details__content"
+        :class="{ 'details__content--md': contentView.html }"
+      >
+        <div v-if="contentView.html" v-html="contentView.html"></div>
+        <template v-else>{{ contentView.text }}</template>
+      </div>
+      <BaseButton v-else variant="ghost" class="details__more" @click="viewerOpen = true">
+        Просмотреть текст
+      </BaseButton>
+      <div
+        ref="measureEl"
+        class="details__measure details__content"
+        :class="{ 'details__content--md': contentView.html }"
+        aria-hidden="true"
+      >
+        <div v-if="contentView.html" v-html="contentView.html"></div>
+        <template v-else>{{ contentView.text }}</template>
+      </div>
+    </template>
+
+    <BaseModal v-model="viewerOpen" :title="object.title || 'Текст'" panel-width="min(640px, calc(100% - 32px))">
+      <div v-if="contentView.html" class="details__content details__content--md details__content--full" v-html="contentView.html"></div>
+      <div v-else class="details__content details__content--full">{{ contentView.text }}</div>
+    </BaseModal>
 
     <div v-if="objectTags.length" class="details__tags">
       <span
@@ -68,13 +93,15 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { formatDateTime, formatSize, typeLabel } from '../../utils/formatters';
 import { isTextNode, readableOn } from '../../utils/nodeAppearance';
 import { renderMarkdown } from '../../utils/markdown';
 import { parseLinkPreview } from '../../utils/linkPreview';
 import { parseTags } from '../../utils/tags';
 import { useElectron } from '../../composables/useElectron';
+import BaseButton from '../common/BaseButton.vue';
+import BaseModal from '../common/BaseModal.vue';
 
 const { readText } = useElectron();
 
@@ -128,9 +155,25 @@ const contentView = computed(() => {
   if (isMarkdown.value) return { html: renderMarkdown(text), text: '' };
   return { html: '', text };
 });
+
+const hasContent = computed(() => Boolean(contentView.value.html || contentView.value.text));
+
+const measureEl = ref(null);
+const contentTruncated = ref(false);
+const viewerOpen = ref(false);
+
+watch(contentView, async () => {
+  await nextTick();
+  const el = measureEl.value;
+  contentTruncated.value = Boolean(el && el.scrollHeight > 215);
+});
 </script>
 
 <style scoped>
+.details {
+  position: relative;
+}
+
 .details__title {
   margin: 0 0 4px;
   font-size: 1.05rem;
@@ -164,8 +207,30 @@ const contentView = computed(() => {
   font-size: 0.85rem;
   line-height: 1.45;
   white-space: pre-wrap;
-  max-height: 160px;
-  overflow: auto;
+  max-height: 200px;
+  overflow: hidden;
+}
+
+.details__more {
+  align-self: flex-start;
+  margin-bottom: var(--ls-space-4);
+}
+
+.details__measure {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  max-height: none;
+  overflow: visible;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.details__content--full,
+.details__content--md.details__content--full {
+  max-height: none;
+  overflow: visible;
 }
 
 .details__linkpreview {
@@ -194,7 +259,8 @@ const contentView = computed(() => {
 }
 
 .details__content--md {
-  max-height: 340px;
+  max-height: 200px;
+  overflow: hidden;
   font-size: 0.85rem;
   line-height: 1.5;
 }

@@ -358,9 +358,12 @@ function onDoubleClick() {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 2px;
+  gap: 1px;
+  min-height: 0;
+  overflow: hidden;
   color: var(--ls-text-dim);
   font-size: 0.7rem;
+  line-height: 1.3;
 }
 
 .node__meta-label {
@@ -374,6 +377,7 @@ function onDoubleClick() {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
+  flex: 0 0 auto;
 }
 
 .node__tag {

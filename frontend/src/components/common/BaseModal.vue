@@ -2,7 +2,7 @@
   <Teleport to="body">
     <div v-if="modelValue" class="modal" role="dialog" aria-modal="true">
       <div class="modal__backdrop" @click="close"></div>
-      <div class="modal__panel">
+      <div class="modal__panel" :style="panelWidth ? { width: panelWidth } : {}">
         <header class="modal__header">
           <h3>{{ title }}</h3>
           <button class="modal__close" type="button" aria-label="Закрыть" @click="close">×</button>
@@ -22,6 +22,7 @@
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
   title: { type: String, default: '' },
+  panelWidth: { type: String, default: null },
 });
 
 const emit = defineEmits(['update:modelValue']);
