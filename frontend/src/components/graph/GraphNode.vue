@@ -17,6 +17,14 @@
       :style="nodeStyle"
     >
       <div class="node__inner" :style="innerStyle">
+        <img
+          v-if="photoUrl"
+          class="node__photo"
+          :src="photoUrl"
+          alt=""
+          draggable="false"
+        />
+        <div v-if="photoUrl" class="node__photo-fade" />
         <div class="node__header">
           <span
             v-if="uiStore.graphFields.type"
@@ -32,10 +40,10 @@
         <p v-if="previewText" class="node__content">{{ previewText }}</p>
 
         <div class="node__meta">
-          <span v-if="uiStore.graphFields.disk && node.disk">{{ node.disk }}</span>
-          <span v-if="uiStore.graphFields.createdDate && node.createdAt">{{ formatDate(node.createdAt) }}</span>
-          <span v-if="uiStore.graphFields.updatedDate && node.updatedAt">{{ formatDate(node.updatedAt) }}</span>
-          <span v-if="uiStore.graphFields.openedDate && node.lastOpenedAt">{{ formatDate(node.lastOpenedAt) }}</span>
+          <span v-if="uiStore.graphFields.disk && node.disk"><em class="node__meta-label">Диск</em>{{ node.disk }}</span>
+          <span v-if="uiStore.graphFields.createdDate && node.createdAt"><em class="node__meta-label">Созд.</em>{{ formatDate(node.createdAt) }}</span>
+          <span v-if="uiStore.graphFields.updatedDate && node.updatedAt"><em class="node__meta-label">Изм.</em>{{ formatDate(node.updatedAt) }}</span>
+          <span v-if="uiStore.graphFields.openedDate && node.lastOpenedAt"><em class="node__meta-label">Откр.</em>{{ formatDate(node.lastOpenedAt) }}</span>
         </div>
 
         <div v-if="uiStore.graphFields.tags && nodeTags.length" class="node__tags">
@@ -60,12 +68,13 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { NODE_HEIGHT, NODE_WIDTH } from '../../utils/graphGeometry';
 import { formatDate } from '../../utils/formatters';
-import { nodeAppearance, readableOn } from '../../utils/nodeAppearance';
+import { isImageNode, nodeAppearance, readableOn } from '../../utils/nodeAppearance';
 import { parseTags } from '../../utils/tags';
 import { uiStore } from '../../stores/uiStore';
+import { useElectron } from '../../composables/useElectron';
 import TypeIcon from '../common/TypeIcon.vue';
 
 const props = defineProps({
@@ -110,6 +119,24 @@ const innerStyle = computed(() => {
     transform: `scale(${contentScale.value})`,
   };
 });
+
+const { readDataUrl } = useElectron();
+
+const photoUrl = ref(null);
+
+watch(
+  () => [props.node.type, props.node.path, props.node.title, props.node.missing],
+  async () => {
+    photoUrl.value = null;
+    const targetPath = props.node.path;
+    if (!isImageNode(props.node) || !targetPath || props.node.missing) return;
+    const result = await readDataUrl(targetPath);
+    if (result?.ok && props.node.path === targetPath) {
+      photoUrl.value = result.dataUrl;
+    }
+  },
+  { immediate: true },
+);
 
 const previewText = computed(() => {
   if (props.node.type === 'NOTE') return props.node.content || '';
@@ -180,6 +207,38 @@ function onDoubleClick() {
   overflow: hidden;
 }
 
+.node__photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+  pointer-events: none;
+  user-select: none;
+}
+
+.node__photo-fade {
+  position: absolute;
+  inset: 0;
+  border-radius: 4px;
+  background: linear-gradient(
+    180deg,
+    rgba(8, 8, 10, 0.88) 0%,
+    rgba(8, 8, 10, 0.62) 34%,
+    rgba(8, 8, 10, 0.3) 58%,
+    rgba(8, 8, 10, 0.68) 100%
+  );
+  pointer-events: none;
+}
+
+.node__header,
+.node__content,
+.node__meta,
+.node__tags {
+  position: relative;
+}
+
 .node__header {
   display: flex;
   align-items: center;
@@ -233,10 +292,18 @@ function onDoubleClick() {
 
 .node__meta {
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px 10px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
   color: var(--ls-text-dim);
   font-size: 0.7rem;
+}
+
+.node__meta-label {
+  font-style: normal;
+  color: var(--ls-text-dim);
+  opacity: 0.75;
+  margin-right: 5px;
 }
 
 .node__tags {

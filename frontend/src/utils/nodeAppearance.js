@@ -10,7 +10,7 @@ const FILE_COLORS = {
 };
 
 const EXTENSION_GROUPS = {
-  image: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'ico', 'tiff'],
+  image: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'ico', 'tiff', 'tif', 'avif'],
   audio: ['mp3', 'wav', 'ogg', 'flac', 'aac', 'm4a'],
   video: ['mp4', 'mkv', 'avi', 'mov', 'webm', 'wmv'],
   archive: ['zip', 'rar', '7z', 'tar', 'gz', 'bz2', 'xz'],
@@ -57,6 +57,12 @@ function fileAppearance(path, title) {
     }
   }
   return FILE_COLORS.default;
+}
+
+export function isImageNode(node) {
+  if (node?.type !== 'FILE') return false;
+  const extension = fileExtension(node.path || node.title);
+  return EXTENSION_GROUPS.image.includes(extension);
 }
 
 export function nodeAppearance(node) {

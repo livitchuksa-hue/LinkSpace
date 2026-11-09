@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld('linkspace', {
   openPath: (targetPath) => ipcRenderer.invoke('fs:open-path', targetPath),
   openUrl: (url) => ipcRenderer.invoke('fs:open-url', url),
   statPath: (targetPath) => ipcRenderer.invoke('fs:stat', targetPath),
+  readDataUrl: (targetPath) => ipcRenderer.invoke('fs:read-data-url', targetPath),
   getPathForFile: (file) => {
     try {
       return webUtils.getPathForFile(file);

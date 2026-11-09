@@ -35,6 +35,11 @@ export function useElectron() {
     return bridge.statPath(targetPath);
   }
 
+  async function readDataUrl(targetPath) {
+    if (!bridge) return { ok: false, error: 'Electron API unavailable' };
+    return bridge.readDataUrl(targetPath);
+  }
+
   function getPathForFile(file) {
     if (!bridge?.getPathForFile) return null;
     return bridge.getPathForFile(file);
@@ -47,6 +52,7 @@ export function useElectron() {
     openPath,
     openUrl,
     statPath,
+    readDataUrl,
     getPathForFile,
   };
 }

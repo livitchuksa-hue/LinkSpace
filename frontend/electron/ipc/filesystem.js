@@ -80,7 +80,39 @@ function registerFilesystemIpc() {
       };
     }
   });
+
+  ipcMain.handle('fs:read-data-url', async (_event, targetPath) => {
+    if (typeof targetPath !== 'string' || targetPath.trim() === '') {
+      return { ok: false, error: 'Path is required' };
+    }
+
+    const MAX_BYTES = 25 * 1024 * 1024;
+    try {
+      const stats = await fs.stat(targetPath);
+      if (!stats.isFile()) return { ok: false, error: 'Not a file' };
+      if (stats.size > MAX_BYTES) return { ok: false, error: 'File too large' };
+      const buffer = await fs.readFile(targetPath);
+      const mime = IMAGE_MIME[path.extname(targetPath).slice(1).toLowerCase()] || 'application/octet-stream';
+      return { ok: true, dataUrl: `data:${mime};base64,${buffer.toString('base64')}` };
+    } catch (error) {
+      return { ok: false, error: error.message };
+    }
+  });
 }
+
+const IMAGE_MIME = {
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  gif: 'image/gif',
+  webp: 'image/webp',
+  bmp: 'image/bmp',
+  svg: 'image/svg+xml',
+  ico: 'image/x-icon',
+  avif: 'image/avif',
+  tif: 'image/tiff',
+  tiff: 'image/tiff',
+};
 
 function formatDisk(filePath) {
   const root = path.parse(filePath).root || '';
