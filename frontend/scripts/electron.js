@@ -3,10 +3,16 @@
  * --dev включает Vite Dev Server через ELECTRON_DEV=1.
  */
 const { spawn } = require('child_process');
-const electron = require('electron');
 const path = require('path');
+const { ensureElectronBinary } = require('./ensure-electron');
 
 const dev = process.argv.includes('--dev');
+
+if (!ensureElectronBinary()) {
+  process.exit(1);
+}
+
+const electron = require('electron');
 const env = { ...process.env };
 delete env.ELECTRON_RUN_AS_NODE;
 if (dev) {
