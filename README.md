@@ -168,23 +168,34 @@ Java 11 вместо 21, а `github.com` может быть недоступе�
 ### Java: Spring Boot 3 требует Java 17+ (лучше 21)
 
 Если в системе только Java 11 — backend **не запустится** (ошибка
-`class file version` / `UnsupportedClassVersionError`). Решение без
-прав администратора — **портативный JDK**:
+`class file version` / `UnsupportedClassVersionError`).
+
+**Рекомендуемый способ — JDK прямо в папке проекта.** Electron при
+запуске backend сам проверяет папки `jdk\` и `backend\jdk\` в корне
+проекта (или переменную `LINKSPACE_JDK`): если там лежит JDK 17+, он
+используется автоматически — системная Java и `JAVA_HOME` при этом
+вообще не важны.
 
 1. Скачайте архив **Eclipse Temurin 21 (JDK)** без установщика:
-   https://adoptium.net → выберите `.zip` / `.tar.gz` версию.
-2. Распакуйте, например, в `C:\tools\jdk-21`.
-3. В том же терминале, где запускаете приложение, укажите Java:
+   https://adoptium.net → Other platforms → `.zip`.
+2. Распакуйте содержимое так, чтобы получилось
+   `Linkspace\jdk\bin\java.exe` (рядом с `backend\` и `frontend\`).
+3. Запускайте как обычно — `npm run electron:dev`. В консоли появится
+   `[backend] using bundled JDK 21: ...\jdk`.
 
-   ```powershell
-   $env:JAVA_HOME = "C:\tools\jdk-21"
-   $env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
-   java -version    # должно показать 21.x
-   ```
+Папка `jdk\` добавлена в `.gitignore` — в репозиторий не попадёт.
 
-   `mvnw.cmd` и Electron берут Java из `JAVA_HOME`/`PATH`, отдельная
-   установка не нужна. Чтобы не прописывать каждый раз — `setx JAVA_HOME
-   "C:\tools\jdk-21"` (применится к новым терминалам).
+**Альтернатива — переменная окружения** (если не хотите держать JDK
+в папке проекта):
+
+```powershell
+$env:JAVA_HOME = "C:\tools\jdk-21"
+$env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
+java -version    # должно показать 21.x
+```
+
+`mvnw.cmd` и Electron берут Java из `JAVA_HOME`/`PATH` в том же
+терминале. Для постоянного применения — `setx JAVA_HOME "C:\tools\jdk-21"`.
 
 Если `npm install` медленный или обрывается (блокировки/нестабильная
 сеть колледжа), можно временно переключить реестр на зеркало:

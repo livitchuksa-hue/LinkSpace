@@ -40,6 +40,10 @@ yarn-error.log*
 frontend/out/
 frontend/release/
 
+# Portативный JDK (не коммитим — слишком большой)
+jdk/
+backend/jdk/
+
 # Temporary
 *.tmp
 *.temp
