@@ -159,6 +159,83 @@ Frontend по умолчанию обращается к `http://127.0.0.1:8080/
 В браузерном режиме файловые функции (диалоги, превью, markdown-файлы)
 недоступны — для полной функциональности используйте Electron.
 
+## Запуск на ПК с ограничениями (колледж/рабочий)
+
+На некоторых машинах нет прав администратора, стоит старый Node/npm,
+Java 11 вместо 21, а `github.com` может быть недоступен. Ниже — как
+запустить в таких условиях.
+
+### Java: Spring Boot 3 требует Java 17+ (лучше 21)
+
+Если в системе только Java 11 — backend **не запустится** (ошибка
+`class file version` / `UnsupportedClassVersionError`).
+
+**Рекомендуемый способ — JDK прямо в папке проекта.** Electron при
+запуске backend сам проверяет папки `jdk\` и `backend\jdk\` в корне
+проекта (или переменную `LINKSPACE_JDK`): если там лежит JDK 17+, он
+используется автоматически — системная Java и `JAVA_HOME` при этом
+вообще не важны.
+
+1. Скачайте архив **Eclipse Temurin 21 (JDK)** без установщика:
+   https://adoptium.net → Other platforms → `.zip`.
+2. Распакуйте содержимое так, чтобы получилось
+   `Linkspace\jdk\bin\java.exe` (рядом с `backend\` и `frontend\`).
+3. Запускайте как обычно — `npm run electron:dev`. В консоли появится
+   `[backend] using bundled JDK 21: ...\jdk`.
+
+Папка `jdk\` добавлена в `.gitignore` — в репозиторий не попадёт.
+
+**Альтернатива — переменная окружения** (если не хотите держать JDK
+в папке проекта):
+
+```powershell
+$env:JAVA_HOME = "C:\tools\jdk-21"
+$env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
+java -version    # должно показать 21.x
+```
+
+`mvnw.cmd` и Electron берут Java из `JAVA_HOME`/`PATH` в том же
+терминале. Для постоянного применения — `setx JAVA_HOME "C:\tools\jdk-21"`.
+
+Если `npm install` медленный или обрывается (блокировки/нестабильная
+сеть колледжа), можно временно переключить реестр на зеркало:
+
+```powershell
+npm config set registry https://registry.npmmirror.com
+npm install
+```
+
+### npm / Electron: «Electron failed to install correctly»
+
+Если `npm install` проходит, но Electron не стартует с ошибкой
+«electron is not installed» — postinstall-скрипт не отработал
+(например, глобальный `ignore-scripts` или заблокирован github.com,
+откуда качается ~100 МБ бинарник).
+
+Что уже сделано в проекте:
+
+- `npm run electron` и `electron:dev` **сами проверяют и доскачивают**
+  бинарник Electron (`scripts/ensure-electron.js`) — просто запустите
+  команду ещё раз, она подождёт загрузку.
+- `postinstall` в `package.json` делает то же самое при `npm install`.
+- Если github.com недоступен, бинарник качается через зеркало
+  `npmmirror.com` автоматически.
+
+Если скачивание всё равно падает — попробуйте вручную:
+
+```powershell
+cd frontend
+npm install --ignore-scripts
+node scripts\ensure-electron.js
+```
+
+### Backend не отвечает / фронт без данных
+
+Почти всегда это Java: backend собран под Java 21, на Java 11
+`mvnw spring-boot:run` падает ещё до старта. Проверьте `java -version`
+в том же терминале, откуда запускаете `npm run electron:dev`, и логи
+`[backend]` в консоли — там будет точная причина.
+
 ## Полезные команды
 
 | Команда | Описание |

@@ -10,6 +10,7 @@ const useViteDevServer = process.env.ELECTRON_DEV === '1';
 const BACKEND_URL = 'http://127.0.0.1:8080/api/objects';
 const BACKEND_DIR = path.join(__dirname, '..', '..', 'backend');
 const BACKEND_JAR = path.join(BACKEND_DIR, 'target', 'linkspace-backend-0.1.0-SNAPSHOT.jar');
+const REPO_ROOT = path.join(__dirname, '..', '..');
 
 /** @type {BrowserWindow | null} */
 let mainWindow = null;
@@ -17,8 +18,50 @@ let backendProcess = null;
 let ownsBackendProcess = false;
 let backendStartPromise = null;
 
-function resolveJavaCommand() {
+function javaMajorVersion(javaHome) {
+  try {
+    const release = fs.readFileSync(path.join(javaHome, 'release'), 'utf8');
+    const match = release.match(/JAVA_VERSION="([^"]+)"/);
+    if (!match) return null;
+    const version = match[1];
+    // Формат "1.8.0_xxx" для старых JDK, "21.0.x" для новых
+    return version.startsWith('1.')
+      ? parseInt(version.split('.')[1], 10)
+      : parseInt(version.split('.')[0], 10);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Портативный JDK внутри проекта: <repo>/jdk, <repo>/backend/jdk
+ * или путь из LINKSPACE_JDK. Нужен для машин, где системная Java
+ * старше не позволяет запустить Spring Boot 3 (требуется 17+).
+ */
+function findBundledJdk() {
+  const candidates = [
+    process.env.LINKSPACE_JDK,
+    path.join(REPO_ROOT, 'jdk'),
+    path.join(REPO_ROOT, 'backend', 'jdk'),
+  ].filter(Boolean);
+
+  for (const dir of candidates) {
+    const javaBin = path.join(dir, 'bin', process.platform === 'win32' ? 'java.exe' : 'java');
+    if (!fs.existsSync(javaBin)) continue;
+    const major = javaMajorVersion(dir);
+    if (major !== null && major >= 17) {
+      console.log(`[backend] using bundled JDK ${major}: ${dir}`);
+      return dir;
+    }
+  }
+  return null;
+}
+
+function resolveJavaCommand(javaHome) {
   const candidates = [];
+  if (javaHome) {
+    candidates.push(path.join(javaHome, 'bin', process.platform === 'win32' ? 'java.exe' : 'java'));
+  }
   if (process.env.JAVA_HOME) {
     candidates.push(path.join(process.env.JAVA_HOME, 'bin', process.platform === 'win32' ? 'java.exe' : 'java'));
   }
@@ -59,12 +102,17 @@ function waitForBackend(timeoutMs = 90000) {
 
 function spawnBackend() {
   const env = { ...process.env };
+  const bundledJdk = findBundledJdk();
+  if (bundledJdk) {
+    env.JAVA_HOME = bundledJdk;
+    env.PATH = `${path.join(bundledJdk, 'bin')}${path.delimiter}${env.PATH || ''}`;
+  }
   let command;
   let args;
 
   const usePackagedJar = !useViteDevServer && fs.existsSync(BACKEND_JAR);
   if (usePackagedJar) {
-    command = resolveJavaCommand();
+    command = resolveJavaCommand(bundledJdk);
     args = ['-jar', BACKEND_JAR];
   } else {
     command = process.platform === 'win32' ? 'cmd.exe' : './mvnw';

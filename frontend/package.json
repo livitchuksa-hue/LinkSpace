@@ -4,12 +4,13 @@
   "private": true,
   "description": "Linkspace desktop client (Vue 3 + Vite + Electron)",
   "main": "electron/main.js",
+  "postinstall": "node scripts/ensure-electron.js || exit 0",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "electron": "node scripts/electron.js",
-    "electron:dev": "concurrently -k \"vite\" \"wait-on http://localhost:5173 && node scripts/electron.js --dev\"",
+    "electron": "node scripts/ensure-electron.js && node scripts/electron.js",
+    "electron:dev": "concurrently -k \"vite\" \"wait-on http://localhost:5173 && node scripts/ensure-electron.js && node scripts/electron.js --dev\"",
     "electron:build": "vite build && electron-builder"
   },
   "dependencies": {
