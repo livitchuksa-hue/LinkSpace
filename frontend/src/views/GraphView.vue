@@ -165,6 +165,14 @@
       </div>
     </GraphCanvas>
 
+    <div
+      class="zoom-hud"
+      :class="{ 'liquid-glass': uiStore.liquidGlass }"
+      title="Масштаб графа"
+    >
+      {{ zoomLabel }}
+    </div>
+
     <BaseModal
       v-model="createOpen"
       :title="createType === 'LINK' ? 'Новая ссылка' : 'Новый объект'"
@@ -243,6 +251,7 @@ const criteriaCount = computed(() => activeCriteriaCount(uiStore.filter));
 const matchedCount = computed(() =>
   graphStore.objects.filter((item) => objectMatchesFilter(item, uiStore.filter)).length,
 );
+const zoomLabel = computed(() => `${Math.round((graphStore.view.scale || 1) * 100)}%`);
 
 function toggleFilterType(type) {
   const current = uiStore.filter.types;
@@ -683,6 +692,23 @@ onMounted(async () => {
 .filter-dropdown__name {
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.zoom-hud {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  z-index: 30;
+  padding: 4px 12px;
+  border: 1px solid var(--ls-border);
+  border-radius: 999px;
+  background: var(--ls-bg-elevated);
+  color: var(--ls-text-muted);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  user-select: none;
 }
 
 .welcome {

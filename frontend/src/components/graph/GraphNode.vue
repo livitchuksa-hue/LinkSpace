@@ -19,15 +19,15 @@
       }"
       :style="nodeStyle"
     >
+      <img
+        v-if="cardImage"
+        class="node__photo"
+        :src="cardImage"
+        alt=""
+        draggable="false"
+      />
+      <div v-if="cardImage" class="node__photo-fade" />
       <div class="node__inner" :style="innerStyle">
-        <img
-          v-if="cardImage"
-          class="node__photo"
-          :src="cardImage"
-          alt=""
-          draggable="false"
-        />
-        <div v-if="cardImage" class="node__photo-fade" />
         <div class="node__header">
           <span
             v-if="fields.type"
@@ -69,6 +69,17 @@
         </div>
       </div>
 
+      <span
+        v-if="node.type === 'LINK'"
+        class="node__ext"
+        title="Внешняя ссылка"
+      >
+        <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M6.5 3.5H3.5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-3" />
+          <path d="M9.5 3.5h3v3" />
+          <path d="M12.5 3.5 8 8" />
+        </svg>
+      </span>
       <span
         class="node__resize"
         title="Изменить размер"
@@ -203,8 +214,14 @@ const previewText = computed(() => {
   return props.node.description || '';
 });
 
+const nodeRadius = computed(() => {
+  const size = Math.min(nodeWidth.value, nodeHeight.value);
+  return `${Math.min(40, Math.max(10, size * 0.1))}px`;
+});
+
 const nodeStyle = computed(() => ({
   '--node-accent': badgeStyle.value.border,
+  '--node-radius': nodeRadius.value,
   borderColor: props.selected
     ? '#ffffff'
     : props.multiSelected
@@ -247,8 +264,8 @@ function onDoubleClick() {
   width: 100%;
   height: 100%;
   padding: 11px 13px;
-  border: 1px solid var(--ls-border);
-  border-radius: var(--ls-radius-md);
+  border: 2px solid var(--ls-border-strong);
+  border-radius: var(--node-radius, var(--ls-radius-md));
   background: var(--ls-bg-panel);
   color: var(--ls-text);
   font-size: 0.82rem;
@@ -309,7 +326,7 @@ function onDoubleClick() {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 9px;
+  border-radius: var(--node-radius, 9px);
   pointer-events: none;
   user-select: none;
 }
@@ -317,7 +334,7 @@ function onDoubleClick() {
 .node__photo-fade {
   position: absolute;
   inset: 0;
-  border-radius: 9px;
+  border-radius: var(--node-radius, 9px);
   background: linear-gradient(
     180deg,
     rgba(8, 8, 10, 0.88) 0%,
@@ -406,29 +423,22 @@ function onDoubleClick() {
 
 .node__meta {
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  flex-wrap: nowrap;
-  gap: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
   min-height: 0;
   overflow: hidden;
   color: var(--ls-text-dim);
   font-size: 0.68rem;
-  line-height: 1.3;
-  white-space: nowrap;
+  line-height: 1.35;
 }
 
 .node__meta span {
   min-width: 0;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.node__meta span + span::before {
-  content: '·';
-  margin: 0 6px;
-  color: var(--ls-text-faint);
 }
 
 .node__meta-label {
@@ -452,6 +462,22 @@ function onDoubleClick() {
   font-weight: 600;
   line-height: 1.5;
   white-space: nowrap;
+}
+
+.node__ext {
+  position: absolute;
+  top: 8px;
+  right: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  color: var(--ls-text-dim);
+  background: var(--ls-bg-soft);
+  border: 1px solid var(--ls-border-subtle);
+  pointer-events: none;
 }
 
 .node__resize {
