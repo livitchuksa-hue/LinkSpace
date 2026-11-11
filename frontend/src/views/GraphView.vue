@@ -6,20 +6,22 @@
         class="region-bar-wrap"
         :style="{ paddingLeft: uiStore.leftPanelOpen ? 'var(--ls-sidebar-width)' : '0px' }"
       >
-        <div class="region-bar">
+        <div class="region-bar" :class="{ 'liquid-glass': uiStore.liquidGlass }">
         <BaseButton variant="primary" @click="finishRegion">Завершить</BaseButton>
         <BaseButton variant="ghost" @click="toggleTool('region')">Отмена</BaseButton>
         <span class="region-bar__divider" aria-hidden="true"></span>
-        <button
-          v-for="option in regionShapeOptions"
-          :key="option.value"
-          class="region-bar__shape"
-          :class="{ 'region-bar__shape--active': uiStore.regionToolShape === option.value }"
-          type="button"
-          @click="setRegionToolShape(option.value)"
-        >
-          {{ option.label }}
-        </button>
+        <div class="region-bar__seg">
+          <button
+            v-for="option in regionShapeOptions"
+            :key="option.value"
+            class="region-bar__shape"
+            :class="{ 'region-bar__shape--active': uiStore.regionToolShape === option.value }"
+            type="button"
+            @click="setRegionToolShape(option.value)"
+          >
+            {{ option.label }}
+          </button>
+        </div>
         <span class="region-bar__hint">{{ regionHint }}</span>
         </div>
       </div>
@@ -34,7 +36,7 @@
     >
       <div class="filter-zone__hot" aria-hidden="true"></div>
       <div class="filter-zone__body">
-      <div class="filter-bar">
+      <div class="filter-bar" :class="{ 'liquid-glass': uiStore.liquidGlass }">
         <div class="filter-bar__group">
           <span class="filter-bar__caption">Тип</span>
           <div class="filter-bar__chips">
@@ -80,7 +82,10 @@
             </button>
             <template v-if="tagsOpen">
               <div class="filter-dropdown__backdrop" @click="tagsOpen = false"></div>
-              <div class="filter-dropdown__list">
+              <div
+                class="filter-dropdown__list"
+                :class="{ 'liquid-glass': uiStore.liquidGlass }"
+              >
                 <label
                   v-for="tag in allTags"
                   :key="tag.name"
@@ -129,6 +134,7 @@
       :connections="graphStore.connections"
       :regions="graphStore.regions"
       :selected-id="uiStore.selectedObjectId"
+      :selected-object-ids="uiStore.selectedObjectIds"
       :selected-connection-id="uiStore.selectedConnectionId"
       :selected-region-id="uiStore.selectedRegionId"
       :connect-source-id="uiStore.connectSourceId"
@@ -144,6 +150,7 @@
       @region-move-end="handleRegionMoveEnd"
       @drop-files="handleDropFiles"
       @context-action="handleContextAction"
+      @select-nodes="handleSelectNodes"
     >
       <div v-if="uiStore.welcomeVisible" class="welcome">
         <p class="welcome__eyebrow">Добро пожаловать</p>
@@ -214,11 +221,12 @@ const {
   handleCreate,
   handleRegionSave,
   handleDropFiles,
+  createAt,
 } = useGraphActions();
 
 const { loadGraph, moveObject, resizeObject, createConnection, updateRegion, markOpened, reorderLayer } = useGraph();
 const { openPath, openUrl } = useElectron();
-const { selectObject, selectConnection, selectRegion, clearSelection, setTool } = useUiStore();
+const { selectObject, selectConnection, selectRegion, clearSelection, setTool, toggleMultiSelect } = useUiStore();
 
 const regionShapeOptions = [
   { value: 'polygon', label: 'Контур' },
@@ -272,7 +280,7 @@ const regionHint = computed(() => {
   return `Кликните первый угол, затем противоположный — область построится по ним${keys}`;
 });
 
-function handleSelectNode(node) {
+function handleSelectNode(node, event) {
   if (uiStore.tool === 'connect') {
     if (!uiStore.connectSourceId) {
       uiStore.connectSourceId = node.id;
@@ -294,7 +302,37 @@ function handleSelectNode(node) {
     return;
   }
 
+  const multi = event?.ctrlKey || event?.metaKey;
+  const inSelection = uiStore.selectedObjectIds.length > 1
+    && uiStore.selectedObjectIds.includes(node.id);
+
+  if (multi) {
+    // Тоггл по pointerdown: click может не дойти из-за pointer capture на канвасе
+    if (event?.type !== 'click') {
+      toggleMultiSelect(node.id);
+    }
+    uiStore.selectedObjectId = node.id;
+    uiStore.selectedConnectionId = null;
+    uiStore.selectedRegionId = null;
+    return;
+  }
+
+  // Нажатие на узел из мультивыделения не должно сбрасывать группу
+  if (inSelection) {
+    uiStore.selectedObjectId = node.id;
+    uiStore.selectedConnectionId = null;
+    uiStore.selectedRegionId = null;
+    return;
+  }
+
   selectObject(node.id);
+}
+
+function handleSelectNodes(ids) {
+  uiStore.selectedObjectIds = ids;
+  uiStore.selectedObjectId = ids.length ? ids[ids.length - 1] : null;
+  uiStore.selectedConnectionId = null;
+  uiStore.selectedRegionId = null;
 }
 
 async function handleOpenNode(node) {
@@ -315,7 +353,12 @@ async function handleOpenNode(node) {
   }
 }
 
-function handleContextAction({ action, kind, id }) {
+function handleContextAction({ action, kind, id, createType: wantedType, point }) {
+  if (action === 'create' && kind === 'canvas') {
+    createAt(wantedType || 'NOTE', point);
+    return;
+  }
+
   if (action === 'open' && kind === 'object') {
     const node = graphStore.objects.find((item) => item.id === id);
     if (node) handleOpenNode(node);
@@ -388,6 +431,8 @@ onMounted(async () => {
 .graph-view__top {
   padding: var(--ls-space-4) var(--ls-space-5) 0;
   min-height: 0;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .graph-view__status {
@@ -413,33 +458,54 @@ onMounted(async () => {
   gap: 8px;
   width: fit-content;
   max-width: 100%;
+  padding: 6px 10px;
+  background: var(--ls-bg-panel);
+  border: 1px solid var(--ls-border);
+  border-radius: var(--ls-radius-md);
+  box-shadow: var(--ls-shadow-md);
 }
 
 .region-bar__divider {
   width: 1px;
-  height: 24px;
-  background: var(--ls-border);
+  height: 20px;
+  background: var(--ls-border-subtle);
+}
+
+.region-bar__seg {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  background: var(--ls-bg-soft);
+  border: 1px solid var(--ls-border-subtle);
+  border-radius: var(--ls-radius-sm);
 }
 
 .region-bar__shape {
-  border: 1px solid var(--ls-border);
+  border: none;
   background: transparent;
   color: var(--ls-text-muted);
-  padding: 6px 12px;
-  border-radius: var(--ls-radius-sm);
-  font-size: 0.82rem;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.78rem;
   cursor: pointer;
+  transition: color var(--ls-transition), background var(--ls-transition);
+}
+
+.region-bar__shape:hover {
+  color: var(--ls-text);
 }
 
 .region-bar__shape--active {
   color: var(--ls-text);
-  border-color: var(--ls-text-dim);
-  background: var(--ls-bg-soft);
+  background: var(--ls-bg-elevated);
+  box-shadow: var(--ls-shadow-sm);
 }
 
 .region-bar__hint {
-  color: var(--ls-text-dim);
-  font-size: 0.78rem;
+  color: var(--ls-text-faint);
+  font-size: 0.74rem;
+  padding: 0 4px;
+  max-width: 340px;
 }
 
 .filter-zone {
@@ -451,6 +517,14 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   align-items: center;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.filter-zone input,
+.filter-zone select {
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 .filter-chip--reset {
@@ -488,6 +562,7 @@ onMounted(async () => {
   gap: 10px 16px;
   max-width: calc(100% - 32px);
   padding: 8px 14px;
+  border-radius: var(--ls-radius-lg);
 }
 
 .filter-bar__group {
@@ -578,8 +653,8 @@ onMounted(async () => {
   padding: 4px;
   background: var(--ls-bg-elevated);
   border: 1px solid var(--ls-border);
-  border-radius: var(--ls-radius-md, 8px);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  border-radius: var(--ls-radius-md);
+  box-shadow: var(--ls-shadow-md);
 }
 
 .filter-dropdown__item {
@@ -611,40 +686,44 @@ onMounted(async () => {
 }
 
 .welcome {
-  width: min(420px, calc(100% - 48px));
+  width: min(400px, calc(100% - 48px));
   text-align: center;
-  padding: var(--ls-space-6);
-  border: 1px solid var(--ls-border);
+  padding: var(--ls-space-6) var(--ls-space-5);
+  border: 1px solid var(--ls-border-subtle);
   border-radius: var(--ls-radius-lg);
   background: var(--ls-bg-elevated);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
 }
 
 .welcome__eyebrow {
   margin: 0 0 var(--ls-space-2);
-  font-size: 0.75rem;
+  font-size: 0.68rem;
+  font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--ls-text-muted);
+  color: var(--ls-text-faint);
 }
 
 .welcome__title {
   margin: 0 0 var(--ls-space-3);
   font-family: var(--ls-font-display);
-  font-size: 2rem;
-  letter-spacing: 0.02em;
+  font-size: 1.6rem;
+  font-weight: 650;
+  letter-spacing: 0.01em;
 }
 
 .welcome__text {
   margin: 0 0 var(--ls-space-3);
   color: var(--ls-text-muted);
-  font-size: 0.95rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
 }
 
 .welcome__hint {
   margin: 0;
+  padding-top: var(--ls-space-3);
+  border-top: 1px solid var(--ls-border-subtle);
   color: var(--ls-text-dim);
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   line-height: 1.5;
 }
 </style>

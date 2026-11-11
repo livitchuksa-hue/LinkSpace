@@ -12,6 +12,18 @@
     </div>
 
     <div class="settings__block">
+      <h3>Оформление</h3>
+      <label class="settings__check">
+        <input v-model="uiStore.liquidGlass" type="checkbox" />
+        <span>Liquid Glass — стеклянные поверхности</span>
+      </label>
+      <p class="settings__hint">
+        Полупрозрачные поверхности с размытием и бликами для шапки,
+        боковых панелей, панелей инструментов и контекстных меню.
+      </p>
+    </div>
+
+    <div class="settings__block">
       <h3>Области</h3>
       <label class="settings__check settings__check--column">
         <span>Форма области по умолчанию</span>
@@ -89,30 +101,78 @@ onMounted(checkBackend);
 
 <style scoped>
 .settings {
-  padding: var(--ls-space-6);
-  max-width: 720px;
+  padding: var(--ls-space-5) var(--ls-space-6);
+  max-width: 680px;
 }
 
 .settings h2 {
   margin: 0 0 var(--ls-space-5);
+  font-family: var(--ls-font-display);
+  font-size: 1.05rem;
+  font-weight: 650;
 }
 
 .settings__block {
-  margin-bottom: var(--ls-space-6);
+  padding: var(--ls-space-4) 0;
+  border-top: 1px solid var(--ls-border-subtle);
+}
+
+.settings__block:last-of-type {
+  border-bottom: 1px solid var(--ls-border-subtle);
 }
 
 .settings__block h3 {
   margin: 0 0 var(--ls-space-3);
-  font-size: 0.95rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ls-text-faint);
 }
 
 .settings__check {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 6px 0;
+  padding: 5px 0;
   color: var(--ls-text-muted);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
+}
+
+.settings__check input[type='checkbox'] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  border: 1px solid var(--ls-border);
+  border-radius: 4px;
+  background: var(--ls-bg);
+  cursor: pointer;
+  position: relative;
+  transition: background var(--ls-transition), border-color var(--ls-transition);
+  flex: 0 0 15px;
+}
+
+.settings__check input[type='checkbox']:checked {
+  background: var(--ls-text);
+  border-color: var(--ls-text);
+}
+
+.settings__check input[type='checkbox']:checked::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border: solid var(--ls-bg);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.settings__check input[type='checkbox']:hover {
+  border-color: var(--ls-text-dim);
 }
 
 .settings__check--column {
@@ -125,33 +185,51 @@ onMounted(checkBackend);
   border: 1px solid var(--ls-border);
   background: var(--ls-bg);
   border-radius: var(--ls-radius-sm);
-  padding: 8px 10px;
+  padding: 7px 10px;
   color: var(--ls-text);
+  font-size: 0.82rem;
   min-width: 220px;
+  color-scheme: dark;
 }
 
 .settings__hint {
-  margin: var(--ls-space-3) 0 0;
+  margin: var(--ls-space-2) 0 0;
   color: var(--ls-text-dim);
-  font-size: 0.8rem;
+  font-size: 0.76rem;
+  line-height: 1.45;
 }
 
 .settings__list {
   margin: 0 0 var(--ls-space-3);
   display: grid;
-  gap: var(--ls-space-4);
+  gap: 0;
+}
+
+.settings__list > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--ls-space-3);
+  padding: 6px 0;
+  border-top: 1px solid var(--ls-border-subtle);
+}
+
+.settings__list > div:first-child {
+  border-top: none;
+  padding-top: 2px;
 }
 
 .settings__list dt {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  font-size: 0.72rem;
   color: var(--ls-text-dim);
 }
 
 .settings__list dd {
-  margin: 4px 0 0;
+  margin: 0;
   font-family: Consolas, "Courier New", monospace;
-  font-size: 0.9rem;
+  font-size: 0.78rem;
+  color: var(--ls-text-muted);
+  text-align: right;
+  word-break: break-all;
 }
 </style>

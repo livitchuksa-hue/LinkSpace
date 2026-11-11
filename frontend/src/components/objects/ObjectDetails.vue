@@ -1,7 +1,14 @@
 <template>
   <div class="details">
-    <p class="details__title">{{ object.title || 'Без названия' }}</p>
-    <p class="details__type muted">{{ typeText }}</p>
+    <div class="details__head">
+      <span class="details__badge" :style="badgeStyle">
+        <TypeIcon :type="object.type" />
+      </span>
+      <div class="details__head-text">
+        <p class="details__title">{{ object.title || 'Без названия' }}</p>
+        <p class="details__type muted">{{ typeText }}</p>
+      </div>
+    </div>
     <p v-if="object.missing" class="details__missing">Файл или папка не найдены по сохранённому пути.</p>
     <p v-if="object.description" class="details__desc">{{ object.description }}</p>
     <div v-if="linkPreviewInfo && (linkPreviewInfo.title || linkPreviewInfo.description)" class="details__linkpreview">
@@ -47,61 +54,82 @@
       </span>
     </div>
 
-    <dl class="details__meta">
-      <div>
-        <dt>Тип</dt>
-        <dd>{{ typeLabel(object.type) }}</dd>
+    <div class="details__group">
+      <p class="details__group-title">Свойства</p>
+      <dl class="details__meta">
+        <div>
+          <dt>Создан</dt>
+          <dd>{{ formatDateTime(object.createdAt) }}</dd>
+        </div>
+        <div>
+          <dt>Изменён</dt>
+          <dd>{{ formatDateTime(object.updatedAt) }}</dd>
+        </div>
+        <div>
+          <dt>Открыт</dt>
+          <dd>{{ formatDateTime(object.lastOpenedAt) }}</dd>
+        </div>
+        <div v-if="object.disk">
+          <dt>Диск</dt>
+          <dd>{{ object.disk }}</dd>
+        </div>
+        <div v-if="object.fileSize != null">
+          <dt>Размер</dt>
+          <dd>{{ formatSize(object.fileSize) }}</dd>
+        </div>
+        <div v-if="object.fileCreatedAt">
+          <dt>Файл создан</dt>
+          <dd>{{ formatDateTime(object.fileCreatedAt) }}</dd>
+        </div>
+        <div v-if="object.fileModifiedAt">
+          <dt>Файл изменён</dt>
+          <dd>{{ formatDateTime(object.fileModifiedAt) }}</dd>
+        </div>
+      </dl>
+    </div>
+
+    <div v-if="object.path || object.url" class="details__group">
+      <p class="details__group-title">Расположение</p>
+      <div v-if="object.path" class="details__loc">
+        <span class="details__loc-label">Путь</span>
+        <code class="details__path">{{ object.path }}</code>
+        <button
+          class="details__copy"
+          type="button"
+          :title="copiedKey === 'path' ? 'Скопировано' : 'Копировать путь'"
+          @click="copyText(object.path, 'path')"
+        >
+          <UiIcon :name="copiedKey === 'path' ? 'check' : 'copy'" />
+        </button>
       </div>
-      <div>
-        <dt>Создан</dt>
-        <dd>{{ formatDateTime(object.createdAt) }}</dd>
+      <div v-if="object.url" class="details__loc">
+        <span class="details__loc-label">URL</span>
+        <code class="details__path">{{ object.url }}</code>
+        <button
+          class="details__copy"
+          type="button"
+          :title="copiedKey === 'url' ? 'Скопировано' : 'Копировать URL'"
+          @click="copyText(object.url, 'url')"
+        >
+          <UiIcon :name="copiedKey === 'url' ? 'check' : 'copy'" />
+        </button>
       </div>
-      <div>
-        <dt>Последнее открытие</dt>
-        <dd>{{ formatDateTime(object.lastOpenedAt) }}</dd>
-      </div>
-      <div>
-        <dt>Изменён</dt>
-        <dd>{{ formatDateTime(object.updatedAt) }}</dd>
-      </div>
-      <div v-if="object.disk">
-        <dt>Диск</dt>
-        <dd>{{ object.disk }}</dd>
-      </div>
-      <div v-if="object.path">
-        <dt>Путь</dt>
-        <dd class="details__path">{{ object.path }}</dd>
-      </div>
-      <div v-if="object.url">
-        <dt>URL</dt>
-        <dd class="details__path">{{ object.url }}</dd>
-      </div>
-      <div v-if="object.fileSize != null">
-        <dt>Размер</dt>
-        <dd>{{ formatSize(object.fileSize) }}</dd>
-      </div>
-      <div v-if="object.fileCreatedAt">
-        <dt>Файл создан</dt>
-        <dd>{{ formatDateTime(object.fileCreatedAt) }}</dd>
-      </div>
-      <div v-if="object.fileModifiedAt">
-        <dt>Файл изменён</dt>
-        <dd>{{ formatDateTime(object.fileModifiedAt) }}</dd>
-      </div>
-    </dl>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue';
 import { formatDateTime, formatSize, typeLabel } from '../../utils/formatters';
-import { isTextNode, readableOn } from '../../utils/nodeAppearance';
+import { isTextNode, nodeAppearance, readableOn, softTone } from '../../utils/nodeAppearance';
 import { renderMarkdown } from '../../utils/markdown';
 import { parseLinkPreview } from '../../utils/linkPreview';
 import { parseTags } from '../../utils/tags';
 import { useElectron } from '../../composables/useElectron';
 import BaseButton from '../common/BaseButton.vue';
 import BaseModal from '../common/BaseModal.vue';
+import TypeIcon from '../common/TypeIcon.vue';
+import UiIcon from '../common/UiIcon.vue';
 
 const { readText } = useElectron();
 
@@ -110,6 +138,22 @@ const props = defineProps({
 });
 
 const objectTags = computed(() => parseTags(props.object.tags));
+
+const badgeStyle = computed(() => softTone(nodeAppearance(props.object).border));
+
+const copiedKey = ref(null);
+let copyTimer = null;
+
+async function copyText(text, key) {
+  try {
+    await navigator.clipboard.writeText(text);
+    copiedKey.value = key;
+    clearTimeout(copyTimer);
+    copyTimer = setTimeout(() => { copiedKey.value = null; }, 1400);
+  } catch {
+    // clipboard может быть недоступен — просто игнорируем
+  }
+}
 
 const linkPreviewInfo = computed(() => (
   props.object.type === 'LINK' ? parseLinkPreview(props.object.preview) : null
@@ -174,15 +218,44 @@ watch(contentView, async () => {
   position: relative;
 }
 
+.details__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: var(--ls-space-3);
+}
+
+.details__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+}
+
+.details__badge :deep(svg) {
+  width: 15px;
+  height: 15px;
+}
+
+.details__head-text {
+  min-width: 0;
+}
+
 .details__title {
-  margin: 0 0 4px;
-  font-size: 1.05rem;
-  font-weight: 600;
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 650;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .details__type {
-  margin: 0 0 var(--ls-space-3);
-  font-size: 0.85rem;
+  margin: 1px 0 0;
+  font-size: 0.76rem;
 }
 
 .details__missing {
@@ -201,7 +274,7 @@ watch(contentView, async () => {
   margin: 0 0 var(--ls-space-4);
   padding: 10px 12px;
   border: 1px solid var(--ls-border-subtle);
-  border-radius: var(--ls-radius-sm);
+  border-radius: var(--ls-radius-md);
   background: var(--ls-bg-soft);
   color: var(--ls-text-muted);
   font-size: 0.85rem;
@@ -237,7 +310,7 @@ watch(contentView, async () => {
   margin: 0 0 var(--ls-space-4);
   padding: 10px 12px;
   border: 1px solid var(--ls-border-subtle);
-  border-radius: var(--ls-radius-sm);
+  border-radius: var(--ls-radius-md);
   background: var(--ls-bg-soft);
 }
 
@@ -321,7 +394,9 @@ watch(contentView, async () => {
 }
 
 .details__content--md :deep(a) {
-  color: #8ab4ff;
+  color: var(--ls-text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .details__content--md :deep(table) {
@@ -356,28 +431,107 @@ watch(contentView, async () => {
   font-weight: 600;
 }
 
+.details__group {
+  margin-bottom: var(--ls-space-4);
+}
+
+.details__group:last-child {
+  margin-bottom: 0;
+}
+
+.details__group-title {
+  margin: 0 0 var(--ls-space-1);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ls-text-faint);
+}
+
 .details__meta {
   margin: 0;
   display: flex;
   flex-direction: column;
+}
+
+.details__meta > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
   gap: var(--ls-space-3);
+  padding: 6px 0;
+  border-top: 1px solid var(--ls-border-subtle);
+}
+
+.details__meta > div:first-child {
+  border-top: none;
+  padding-top: 2px;
 }
 
 .details__meta dt {
+  flex: 0 0 auto;
   font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
   color: var(--ls-text-dim);
 }
 
 .details__meta dd {
-  margin: 2px 0 0;
-  font-size: 0.88rem;
+  margin: 0;
+  font-size: 0.8rem;
+  text-align: right;
   word-break: break-word;
 }
 
+.details__loc {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-top: 1px solid var(--ls-border-subtle);
+}
+
+.details__loc:first-of-type {
+  border-top: none;
+  padding-top: 2px;
+}
+
+.details__loc-label {
+  flex: 0 0 34px;
+  font-size: 0.72rem;
+  color: var(--ls-text-dim);
+}
+
 .details__path {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
   font-family: Consolas, "Courier New", monospace;
-  font-size: 0.78rem;
+  font-size: 0.74rem;
+  color: var(--ls-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl;
+  text-align: left;
+}
+
+.details__copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  border: 1px solid transparent;
+  border-radius: var(--ls-radius-sm);
+  background: transparent;
+  color: var(--ls-text-dim);
+  cursor: pointer;
+  transition: color var(--ls-transition), background var(--ls-transition), border-color var(--ls-transition);
+}
+
+.details__copy:hover {
+  color: var(--ls-text);
+  background: var(--ls-bg-soft);
+  border-color: var(--ls-border-subtle);
 }
 </style>

@@ -11,6 +11,7 @@
     @pointercancel="handlePointerUp"
     @pointerleave="handlePointerUp"
     @dblclick="handleDoubleClick"
+    @contextmenu.prevent="onCanvasContext"
     @dragenter.prevent="dropActive = true"
     @dragover.prevent="dropActive = true"
     @dragleave.prevent="dropActive = false"
@@ -57,6 +58,7 @@
         :key="`node-${node.id}`"
         :node="node"
         :selected="selectedId === node.id"
+        :multi-selected="selectedObjectIds.includes(node.id)"
         :connect-source="connectSourceId === node.id"
         @move-start="onNodePointerDown"
         @resize-start="onNodeResizeStart"
@@ -78,6 +80,11 @@
     </div>
 
     <div v-if="dropActive" class="drop-hint">Отпустите файлы или папку, чтобы добавить на граф</div>
+    <div
+      v-if="bandStyle"
+      class="selection-band"
+      :style="bandStyle"
+    ></div>
     <GraphContextMenu
       :menu="contextMenu"
       @action="onContextAction"
@@ -98,12 +105,14 @@ import GraphContextMenu from './GraphContextMenu.vue';
 import { graphStore } from '../../stores/graphStore';
 import { useGraphInteraction } from '../../composables/useGraphInteraction';
 import { sortByLayer } from '../../composables/useGraph';
+import { NODE_HEIGHT, NODE_WIDTH } from '../../utils/graphGeometry';
 
 const props = defineProps({
   objects: { type: Array, default: () => [] },
   connections: { type: Array, default: () => [] },
   regions: { type: Array, default: () => [] },
   selectedId: { type: [Number, String], default: null },
+  selectedObjectIds: { type: Array, default: () => [] },
   selectedConnectionId: { type: [Number, String], default: null },
   selectedRegionId: { type: [Number, String], default: null },
   connectSourceId: { type: [Number, String], default: null },
@@ -122,6 +131,7 @@ const emit = defineEmits([
   'region-move-end',
   'drop-files',
   'context-action',
+  'select-nodes',
 ]);
 
 const root = ref(null);
@@ -129,6 +139,8 @@ const dropActive = ref(false);
 const pendingRegion = ref(null);
 const contextMenu = ref(null);
 const canvasPress = ref(null);
+const band = ref(null);
+const bandRect = ref(null);
 const svgSize = 12000;
 
 const sortedObjects = computed(() => sortByLayer(props.objects));
@@ -172,7 +184,20 @@ function openContextMenu(event, kind, item) {
     y: event.clientY,
     kind,
     id: item?.id,
+    point: item?.point,
   };
+}
+
+function onCanvasContext(event) {
+  if (event.shiftKey || band.value) return;
+  if (!root.value) return;
+  const world = clientToWorld(
+    event.clientX,
+    event.clientY,
+    root.value.getBoundingClientRect(),
+    graphStore.view,
+  );
+  openContextMenu(event, 'canvas', { point: world });
 }
 
 function onNodeContext(event, node) {
@@ -229,7 +254,33 @@ function handleWheel(event) {
   onWheel(event, root.value);
 }
 
+const bandStyle = computed(() => {
+  if (!band.value || !bandRect.value) return null;
+  const rect = bandRect.value;
+  const current = band.value;
+  const x1 = Math.min(current.x1, current.x2) - rect.left;
+  const y1 = Math.min(current.y1, current.y2) - rect.top;
+  return {
+    left: `${x1}px`,
+    top: `${y1}px`,
+    width: `${Math.abs(current.x2 - current.x1)}px`,
+    height: `${Math.abs(current.y2 - current.y1)}px`,
+  };
+});
+
 function handlePointerDown(event) {
+  if (event.button === 0 && event.shiftKey && props.tool === 'select') {
+    event.preventDefault();
+    capturePointer(event);
+    band.value = {
+      x1: event.clientX,
+      y1: event.clientY,
+      x2: event.clientX,
+      y2: event.clientY,
+    };
+    bandRect.value = root.value?.getBoundingClientRect() || null;
+    return;
+  }
   if (event.button !== 0) return;
   capturePointer(event);
 
@@ -255,9 +306,9 @@ function onNodeResizeStart(event, node) {
   startNodeResize(event, node);
 }
 
-function onNodeSelect(id) {
+function onNodeSelect(id, event) {
   const node = props.objects.find((item) => item.id === id);
-  if (node) emit('select-node', node);
+  if (node) emit('select-node', node, event);
 }
 
 function onNodeEdit(id) {
@@ -309,6 +360,9 @@ function onRegionStrokePress(event, region) {
 }
 
 function handlePointerMove(event) {
+  if (band.value) {
+    band.value = { ...band.value, x2: event.clientX, y2: event.clientY };
+  }
   if (canvasPress.value && !canvasPress.value.dragged) {
     const press = canvasPress.value;
     if (Math.hypot(event.clientX - press.x, event.clientY - press.y) > 4) {
@@ -328,7 +382,13 @@ function handlePointerMove(event) {
   onPointerMove(event);
 }
 
-function handlePointerUp() {
+function handlePointerUp(event) {
+  if (band.value) {
+    const start = band.value;
+    band.value = null;
+    bandRect.value = null;
+    finishBand(start);
+  }
   if (canvasPress.value) {
     const press = canvasPress.value;
     canvasPress.value = null;
@@ -344,6 +404,28 @@ function handlePointerUp() {
     }
   }
   onPointerUp();
+}
+
+function finishBand(start) {
+  if (!root.value) return;
+  const rect = root.value.getBoundingClientRect();
+  const view = graphStore.view;
+  const a = clientToWorld(start.x1, start.y1, rect, view);
+  const b = clientToWorld(start.x2, start.y2, rect, view);
+  const x1 = Math.min(a.x, b.x);
+  const y1 = Math.min(a.y, b.y);
+  const x2 = Math.max(a.x, b.x);
+  const y2 = Math.max(a.y, b.y);
+  if (x2 - x1 < 8 && y2 - y1 < 8) return;
+  const ids = props.objects
+    .filter((node) => {
+      const w = Math.max(180, Number(node.width) || NODE_WIDTH);
+      const h = Math.max(110, Number(node.height) || NODE_HEIGHT);
+      return node.x < x2 && node.x + w > x1 && node.y < y2 && node.y + h > y1;
+    })
+    .map((node) => node.id);
+  if (ids.length) emit('select-nodes', ids);
+  else emit('select-canvas');
 }
 
 function handleDoubleClick() {
@@ -390,11 +472,11 @@ defineExpose({ root, finishRegion, cancelRegion });
   height: 100%;
   overflow: hidden;
   cursor: grab;
-  background-image:
-    linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
-  background-size: 48px 48px;
-  background-position: 0 0;
+  user-select: none;
+  -webkit-user-select: none;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+  background-size: 30px 30px;
+  background-position: center center;
   outline: none;
 }
 
@@ -446,6 +528,7 @@ defineExpose({ root, finishRegion, cancelRegion });
   fill: #d8d8d8;
   font-size: 12px;
   font-weight: 600;
+  letter-spacing: 0.02em;
   text-anchor: middle;
   dominant-baseline: central;
   paint-order: stroke;
@@ -459,6 +542,14 @@ defineExpose({ root, finishRegion, cancelRegion });
   stroke: #fff;
   stroke-width: 1.5;
   stroke-dasharray: 6 4;
+}
+
+.selection-band {
+  position: absolute;
+  z-index: 30;
+  pointer-events: none;
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.07);
 }
 
 .drop-hint,

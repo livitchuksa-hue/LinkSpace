@@ -1,7 +1,7 @@
 <template>
-  <header class="header">
+  <header class="header" :class="{ 'liquid-glass': uiStore.liquidGlass }">
     <div class="brand">
-      <span class="brand__mark" aria-hidden="true"></span>
+      <img class="brand__mark" :src="appIcon" alt="" draggable="false" />
       <h1 class="brand__title">Linkspace</h1>
     </div>
     <nav class="nav">
@@ -19,6 +19,7 @@
 
 <script setup>
 import { uiStore } from '../../stores/uiStore';
+import appIcon from '../../assets/app-icon.png';
 </script>
 
 <style scoped>
@@ -27,30 +28,32 @@ import { uiStore } from '../../stores/uiStore';
   align-items: center;
   justify-content: space-between;
   gap: var(--ls-space-4);
-  padding: 0 var(--ls-space-5);
-  background: #0b0b0b;
-  border-bottom: 1px solid var(--ls-border);
+  padding: 0 var(--ls-space-4);
+  background: var(--ls-bg);
+  border-bottom: 1px solid var(--ls-border-subtle);
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: var(--ls-space-3);
+  gap: 10px;
 }
 
 .brand__mark {
-  width: 10px;
-  height: 10px;
-  border-radius: 2px;
-  background: #fff;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  object-fit: cover;
 }
 
 .brand__title {
   margin: 0;
   font-family: var(--ls-font-display);
-  font-size: 1.05rem;
+  font-size: 0.88rem;
   font-weight: 650;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ls-text-muted);
 }
 
 .nav {
@@ -62,8 +65,10 @@ import { uiStore } from '../../stores/uiStore';
   border: 1px solid transparent;
   background: transparent;
   color: var(--ls-text-muted);
-  padding: 6px 12px;
+  padding: 5px 12px;
   border-radius: var(--ls-radius-sm);
+  font-size: 0.8rem;
+  transition: color var(--ls-transition), background var(--ls-transition), border-color var(--ls-transition);
 }
 
 .nav__btn:hover {
@@ -74,5 +79,6 @@ import { uiStore } from '../../stores/uiStore';
 .nav__btn--active {
   color: var(--ls-text);
   border-color: var(--ls-border);
+  background: var(--ls-bg-soft);
 }
 </style>

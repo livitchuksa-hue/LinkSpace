@@ -3,7 +3,7 @@
     <p class="confirm__text">{{ message }}</p>
     <template #footer>
       <BaseButton variant="ghost" @click="cancel">Отмена</BaseButton>
-      <BaseButton variant="primary" @click="confirm">Подтвердить</BaseButton>
+      <BaseButton variant="danger" @click="confirm">Подтвердить</BaseButton>
     </template>
   </BaseModal>
 </template>

@@ -14,7 +14,7 @@
       :height="bounds.height"
       rx="18"
       :fill="region.color || '#ffffff'"
-      fill-opacity="0.16"
+      fill-opacity="0.1"
       @pointerdown.stop="$emit('fill-press', $event)"
       @click.stop="$emit('select')"
     />
@@ -26,7 +26,7 @@
       :rx="bounds.width / 2"
       :ry="bounds.height / 2"
       :fill="region.color || '#ffffff'"
-      fill-opacity="0.16"
+      fill-opacity="0.1"
       @pointerdown.stop="$emit('fill-press', $event)"
       @click.stop="$emit('select')"
     />
@@ -35,7 +35,7 @@
       class="region__fill"
       :d="smoothPath"
       :fill="region.color || '#ffffff'"
-      fill-opacity="0.16"
+      fill-opacity="0.1"
       @pointerdown.stop="$emit('fill-press', $event)"
       @click.stop="$emit('select')"
     />
@@ -193,7 +193,8 @@ const outlineColor = computed(() => {
 .region__stroke {
   fill: none;
   stroke-width: 1;
-  stroke-dasharray: 5 4;
+  stroke-dasharray: 4 4;
+  stroke-opacity: 0.85;
   pointer-events: stroke;
   cursor: grab;
 }
@@ -216,7 +217,7 @@ const outlineColor = computed(() => {
 }
 
 .region__midpoint {
-  fill: #d0d0d0;
+  fill: #cfcfcf;
   stroke: #0a0a0a;
   stroke-width: 1;
   stroke-dasharray: 2 2;

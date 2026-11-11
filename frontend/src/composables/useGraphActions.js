@@ -14,6 +14,7 @@ export const canvasRef = ref(null);
 export const createOpen = ref(false);
 export const createType = ref('NOTE');
 export const regionDraft = ref(null);
+export const pendingCreatePoint = ref(null);
 
 const { setTool } = useUiStore();
 
@@ -46,6 +47,20 @@ export function useGraphActions() {
     createOpen.value = true;
   }
 
+  function openCreateAt(type = 'NOTE', point = null) {
+    pendingCreatePoint.value = point;
+    openCreate(type);
+  }
+
+  async function createAt(type = 'NOTE', point = null) {
+    pendingCreatePoint.value = point || null;
+    if (type === 'FILE' || type === 'FOLDER') {
+      await addLocalMaterial(type);
+    } else {
+      openCreate(type);
+    }
+  }
+
   function toggleTool(tool) {
     const next = uiStore.tool === tool ? 'select' : tool;
     if (next === 'region' && uiStore.tool !== 'region') {
@@ -76,7 +91,11 @@ export function useGraphActions() {
 
   async function handleCreate(payload) {
     try {
-      const position = nextPosition();
+      const point = pendingCreatePoint.value;
+      pendingCreatePoint.value = null;
+      const position = point
+        ? { x: point.x - 120, y: point.y - 70 }
+        : nextPosition();
       await createObject({ ...payload, x: position.x, y: position.y });
       createOpen.value = false;
       uiStore.welcomeVisible = false;
@@ -110,8 +129,13 @@ export function useGraphActions() {
     }
 
     const paths = type === 'FOLDER' ? [await selectFolder()].filter(Boolean) : await selectFile();
-    if (!paths.length) return;
-    await addPaths(paths);
+    if (!paths.length) {
+      pendingCreatePoint.value = null;
+      return;
+    }
+    const point = pendingCreatePoint.value;
+    pendingCreatePoint.value = null;
+    await addPaths(paths, point);
   }
 
   async function addPaths(paths, startPoint = null) {
@@ -170,6 +194,9 @@ export function useGraphActions() {
     regionDraft,
     nextPosition,
     openCreate,
+    openCreateAt,
+    createAt,
+    pendingCreatePoint,
     toggleTool,
     setRegionToolShape,
     finishRegion,

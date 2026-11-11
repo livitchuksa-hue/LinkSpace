@@ -1,4 +1,4 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, nativeImage } = require('electron');
 const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
@@ -11,6 +11,20 @@ const BACKEND_URL = 'http://127.0.0.1:8080/api/objects';
 const BACKEND_DIR = path.join(__dirname, '..', '..', 'backend');
 const BACKEND_JAR = path.join(BACKEND_DIR, 'target', 'linkspace-backend-0.1.0-SNAPSHOT.jar');
 const REPO_ROOT = path.join(__dirname, '..', '..');
+
+function appIcon() {
+  const candidates = [
+    path.join(__dirname, '..', 'dist', 'app-icon.png'),
+    path.join(__dirname, '..', 'public', 'app-icon.png'),
+    path.join(REPO_ROOT, 'app-icon.png'),
+  ];
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) {
+      return nativeImage.createFromPath(candidate);
+    }
+  }
+  return undefined;
+}
 
 /** @type {BrowserWindow | null} */
 let mainWindow = null;
@@ -185,6 +199,7 @@ function createWindow() {
     minHeight: 640,
     backgroundColor: '#0a0a0a',
     title: 'Linkspace',
+    icon: appIcon(),
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,

@@ -30,12 +30,12 @@
       <div class="editor__color">
         <input
           type="color"
-          :value="form.color || '#e0e7ff'"
+          :value="form.color || '#d9d9d9'"
           @input="form.color = $event.target.value"
         />
-        <input v-model="form.color" type="text" maxlength="7" placeholder="#e0e7ff" />
+        <input v-model="form.color" type="text" maxlength="7" placeholder="#d9d9d9" />
       </div>
-      <p class="editor__hint">HEX-цвет вроде #e0e7ff. Пустое поле вернёт стандартный цвет типа/расширения.</p>
+      <p class="editor__hint">HEX-цвет вроде #d9d9d9. Пустое поле вернёт стандартный цвет типа/расширения.</p>
     </div>
 
     <div class="editor__field">
@@ -366,8 +366,14 @@ async function submit() {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  font-size: 0.88rem;
+  font-size: 0.8rem;
   color: var(--ls-text-muted);
+}
+
+.editor__field > span {
+  font-size: 0.72rem;
+  font-weight: 550;
+  color: var(--ls-text-dim);
 }
 
 .editor__field input,
@@ -376,8 +382,22 @@ async function submit() {
   border: 1px solid var(--ls-border);
   background: var(--ls-bg);
   border-radius: var(--ls-radius-sm);
-  padding: 8px 10px;
+  padding: 7px 10px;
+  min-height: var(--ls-control-h);
   color: var(--ls-text);
+  font-size: 0.85rem;
+  transition: border-color var(--ls-transition);
+}
+
+.editor__field select {
+  color-scheme: dark;
+}
+
+.editor__field input:focus,
+.editor__field select:focus,
+.editor__field textarea:focus {
+  border-color: var(--ls-text-dim);
+  outline: none;
 }
 
 .editor__field textarea {
@@ -396,9 +416,12 @@ async function submit() {
 }
 
 .editor__color input[type='color'] {
-  width: 44px;
-  height: 34px;
-  padding: 2px;
+  width: 40px;
+  height: var(--ls-control-h);
+  padding: 3px;
+  border: 1px solid var(--ls-border);
+  border-radius: var(--ls-radius-sm);
+  background: var(--ls-bg);
   cursor: pointer;
 }
 
@@ -413,9 +436,15 @@ async function submit() {
   background: transparent;
   color: var(--ls-text-muted);
   border-radius: 999px;
-  padding: 4px 10px;
-  font-size: 0.78rem;
+  padding: 3px 10px;
+  font-size: 0.74rem;
   cursor: pointer;
+  transition: border-color var(--ls-transition), background var(--ls-transition), color var(--ls-transition);
+}
+
+.editor__tag:hover {
+  border-color: var(--ls-text-dim);
+  color: var(--ls-text);
 }
 
 .editor__tag--active {
@@ -430,9 +459,12 @@ async function submit() {
 }
 
 .editor__newtag input[type='color'] {
-  width: 44px;
-  height: 34px;
-  padding: 2px;
+  width: 40px;
+  height: var(--ls-control-h);
+  padding: 3px;
+  border: 1px solid var(--ls-border);
+  border-radius: var(--ls-radius-sm);
+  background: var(--ls-bg);
   cursor: pointer;
 }
 
@@ -445,7 +477,8 @@ async function submit() {
 .editor__hint {
   margin: 0;
   color: var(--ls-text-dim);
-  font-size: 0.75rem;
+  font-size: 0.72rem;
+  line-height: 1.45;
 }
 
 .editor__actions {
@@ -457,7 +490,8 @@ async function submit() {
 
 .editor__error {
   margin: 0;
-  color: var(--ls-danger);
-  font-size: 0.85rem;
+  color: var(--ls-text);
+  font-size: 0.8rem;
+  font-weight: 550;
 }
 </style>

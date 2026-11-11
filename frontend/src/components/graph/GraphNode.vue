@@ -12,6 +12,7 @@
       class="node"
       :class="{
         'node--selected': selected,
+        'node--multi': multiSelected,
         'node--connect-source': connectSource,
         'node--missing': node.missing,
         'node--photo': cardImage,
@@ -29,9 +30,9 @@
         <div v-if="cardImage" class="node__photo-fade" />
         <div class="node__header">
           <span
-            v-if="uiStore.graphFields.type"
+            v-if="fields.type"
             class="node__kind"
-            :style="{ background: appearance.bg, color: appearance.fg }"
+            :style="badgeStyle"
           >
             <img
               v-if="node.type === 'LINK' && faviconSrc"
@@ -42,7 +43,7 @@
             />
             <TypeIcon v-else :type="node.type" />
           </span>
-          <span v-if="uiStore.graphFields.title" class="node__title">{{ node.title }}</span>
+          <span v-if="fields.title" class="node__title">{{ node.title }}</span>
           <span v-if="node.missing" class="node__missing" title="Файл не найден">!</span>
         </div>
 
@@ -50,13 +51,13 @@
         <p v-if="filePreview" class="node__content node__content--file">{{ filePreview }}</p>
 
         <div class="node__meta">
-          <span v-if="uiStore.graphFields.disk && node.disk"><em class="node__meta-label">Диск</em>{{ node.disk }}</span>
-          <span v-if="uiStore.graphFields.createdDate && node.createdAt"><em class="node__meta-label">Созд.</em>{{ formatDate(node.createdAt) }}</span>
-          <span v-if="uiStore.graphFields.updatedDate && node.updatedAt"><em class="node__meta-label">Изм.</em>{{ formatDate(node.updatedAt) }}</span>
-          <span v-if="uiStore.graphFields.openedDate && node.lastOpenedAt"><em class="node__meta-label">Откр.</em>{{ formatDate(node.lastOpenedAt) }}</span>
+          <span v-if="fields.disk && node.disk"><em class="node__meta-label">Диск</em>{{ node.disk }}</span>
+          <span v-if="fields.createdDate && node.createdAt"><em class="node__meta-label">Созд.</em>{{ formatDate(node.createdAt) }}</span>
+          <span v-if="fields.updatedDate && node.updatedAt"><em class="node__meta-label">Изм.</em>{{ formatDate(node.updatedAt) }}</span>
+          <span v-if="fields.openedDate && node.lastOpenedAt"><em class="node__meta-label">Откр.</em>{{ formatDate(node.lastOpenedAt) }}</span>
         </div>
 
-        <div v-if="uiStore.graphFields.tags && nodeTags.length" class="node__tags">
+        <div v-if="fields.tags && nodeTags.length" class="node__tags">
           <span
             v-for="tag in nodeTags"
             :key="tag.name"
@@ -81,11 +82,12 @@
 import { computed, ref, watch } from 'vue';
 import { NODE_HEIGHT, NODE_WIDTH } from '../../utils/graphGeometry';
 import { formatDate } from '../../utils/formatters';
-import { isImageNode, isTextNode, nodeAppearance, readableOn } from '../../utils/nodeAppearance';
+import { isImageNode, isTextNode, nodeAppearance, readableOn, softTone } from '../../utils/nodeAppearance';
 import { markdownPlainText } from '../../utils/markdown';
 import { linkDomain, parseLinkPreview } from '../../utils/linkPreview';
 import { parseTags } from '../../utils/tags';
 import { objectMatchesFilter } from '../../utils/filters';
+import { cardFieldsFor } from '../../utils/cardFields';
 import { uiStore } from '../../stores/uiStore';
 import { graphStore } from '../../stores/graphStore';
 import { useElectron } from '../../composables/useElectron';
@@ -104,11 +106,16 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  multiSelected: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const emit = defineEmits(['move-start', 'select', 'edit', 'resize-start', 'context']);
 
 const appearance = computed(() => nodeAppearance(props.node));
+const badgeStyle = computed(() => softTone(appearance.value.border));
 const nodeWidth = computed(() => Math.max(180, Number(props.node.width) || NODE_WIDTH));
 const nodeHeight = computed(() => Math.max(110, Number(props.node.height) || NODE_HEIGHT));
 
@@ -121,6 +128,7 @@ const nodePosition = computed(() => ({
 const nodeTags = computed(() => parseTags(props.node.tags).slice(0, 4));
 
 const dimmed = computed(() => !objectMatchesFilter(props.node, uiStore.filter));
+const fields = computed(() => cardFieldsFor(props.node.id));
 
 const contentScale = computed(() => {
   const zoom = graphStore.view.scale || 1;
@@ -196,16 +204,20 @@ const previewText = computed(() => {
 });
 
 const nodeStyle = computed(() => ({
-  borderColor: props.selected ? '#ffffff' : appearance.value.border,
-  boxShadow: props.selected ? '0 0 0 1px #ffffff' : `inset 3px 0 0 ${appearance.value.border}`,
+  '--node-accent': badgeStyle.value.border,
+  borderColor: props.selected
+    ? '#ffffff'
+    : props.multiSelected
+      ? 'rgba(255, 255, 255, 0.45)'
+      : undefined,
 }));
 
 function onPointerDown(event) {
   emit('move-start', event, props.node);
 }
 
-function onClick() {
-  emit('select', props.node.id);
+function onClick(event) {
+  emit('select', props.node.id, event);
 }
 
 function onDoubleClick() {
@@ -220,6 +232,8 @@ function onDoubleClick() {
   top: 0;
   cursor: grab;
   z-index: 1;
+  user-select: none;
+  -webkit-user-select: none;
   transition: opacity 0.25s ease;
 }
 
@@ -232,14 +246,31 @@ function onDoubleClick() {
   box-sizing: border-box;
   width: 100%;
   height: 100%;
-  padding: 10px 12px;
-  border: 1px solid #3a3a3a;
-  border-radius: 6px;
+  padding: 11px 13px;
+  border: 1px solid var(--ls-border);
+  border-radius: var(--ls-radius-md);
   background: var(--ls-bg-panel);
   color: var(--ls-text);
   font-size: 0.82rem;
   overflow: hidden;
   user-select: none;
+  transition: border-color var(--ls-transition);
+}
+
+.node::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 12px;
+  bottom: 12px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--node-accent, transparent);
+  pointer-events: none;
+}
+
+.node:hover {
+  border-color: var(--ls-text-dim);
 }
 
 .node--selected {
@@ -251,10 +282,18 @@ function onDoubleClick() {
   outline-offset: 1px;
 }
 
+.node--missing {
+  border-style: dashed;
+}
+
+.node--missing .node__title {
+  color: var(--ls-text-muted);
+}
+
 .node__inner {
   position: absolute;
-  left: 10px;
-  top: 10px;
+  left: 14px;
+  top: 12px;
   right: auto;
   bottom: auto;
   display: flex;
@@ -270,7 +309,7 @@ function onDoubleClick() {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 4px;
+  border-radius: 9px;
   pointer-events: none;
   user-select: none;
 }
@@ -278,7 +317,7 @@ function onDoubleClick() {
 .node__photo-fade {
   position: absolute;
   inset: 0;
-  border-radius: 4px;
+  border-radius: 9px;
   background: linear-gradient(
     180deg,
     rgba(8, 8, 10, 0.88) 0%,
@@ -307,10 +346,11 @@ function onDoubleClick() {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
-  flex: 0 0 22px;
-  border-radius: 5px;
+  width: 21px;
+  height: 21px;
+  flex: 0 0 21px;
+  border-radius: 6px;
+  border: 1px solid transparent;
 }
 
 .node__favicon {
@@ -325,7 +365,8 @@ function onDoubleClick() {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-weight: 600;
+  font-weight: 650;
+  letter-spacing: 0.01em;
 }
 
 .node__missing {
@@ -335,9 +376,9 @@ function onDoubleClick() {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid #ff6b6b;
+  border: 1px solid var(--ls-text-muted);
   border-radius: 50%;
-  color: #ff6b6b;
+  color: var(--ls-text);
   font-size: 0.72rem;
   font-weight: 700;
 }
@@ -365,14 +406,29 @@ function onDoubleClick() {
 
 .node__meta {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 1px;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 0;
   min-height: 0;
   overflow: hidden;
   color: var(--ls-text-dim);
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   line-height: 1.3;
+  white-space: nowrap;
+}
+
+.node__meta span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.node__meta span + span::before {
+  content: '·';
+  margin: 0 6px;
+  color: var(--ls-text-faint);
 }
 
 .node__meta-label {

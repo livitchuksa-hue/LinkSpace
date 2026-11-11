@@ -9,6 +9,8 @@ const FIELDS_KEY = 'graph.fields';
 const PANELS_KEY = 'ui.panels';
 const REGION_KEY = 'graph.region';
 const FILTER_KEY = 'graph.filter';
+const CARD_FIELDS_KEY = 'graph.cardFields';
+const GLASS_KEY = 'ui.glass';
 const SAVE_DELAY = 500;
 
 function parseJson(value, fallback) {
@@ -57,6 +59,16 @@ export function useWorkspaceSettings() {
     settingsService.set(FILTER_KEY, JSON.stringify(filter)).catch(() => {});
   }, SAVE_DELAY);
 
+  const saveCardFields = debounce((overrides) => {
+    if (!loaded) return;
+    settingsService.set(CARD_FIELDS_KEY, JSON.stringify(overrides)).catch(() => {});
+  }, SAVE_DELAY);
+
+  const saveGlass = debounce((enabled) => {
+    if (!loaded) return;
+    settingsService.set(GLASS_KEY, JSON.stringify(enabled)).catch(() => {});
+  }, SAVE_DELAY);
+
   async function loadSettings({ retries = 20, retryDelay = 1200 } = {}) {
     for (let attempt = 0; attempt <= retries; attempt += 1) {
       try {
@@ -98,6 +110,14 @@ export function useWorkspaceSettings() {
         if (filter) {
           uiStore.filter = normalizeFilter(filter);
         }
+        const cardFields = parseJson(settings[CARD_FIELDS_KEY], null);
+        if (cardFields && typeof cardFields === 'object') {
+          uiStore.cardFieldOverrides = cardFields;
+        }
+        const glass = parseJson(settings[GLASS_KEY], null);
+        if (typeof glass === 'boolean') {
+          uiStore.liquidGlass = glass;
+        }
         loaded = true;
         return;
       } catch {
@@ -120,6 +140,8 @@ export function useWorkspaceSettings() {
     );
     watch(() => ({ ...uiStore.regionDefaults }), saveRegion, { deep: true });
     watch(() => ({ ...uiStore.filter, types: [...uiStore.filter.types], tags: [...uiStore.filter.tags] }), saveFilter, { deep: true });
+    watch(() => ({ ...uiStore.cardFieldOverrides }), saveCardFields, { deep: true });
+    watch(() => uiStore.liquidGlass, saveGlass);
   }
 
   return { loadSettings, bindSettingsPersistence };

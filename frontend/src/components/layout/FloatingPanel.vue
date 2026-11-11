@@ -1,7 +1,11 @@
 <template>
   <div class="fp" :class="[`fp--${side}`, { 'fp--visible': visible }]">
     <div class="fp__hotzone" aria-hidden="true" @mouseenter="revealed = true"></div>
-    <aside class="fp__panel" @mouseleave="onPanelLeave">
+    <aside
+      class="fp__panel"
+      :class="{ 'liquid-glass': uiStore.liquidGlass }"
+      @mouseleave="onPanelLeave"
+    >
       <div class="fp__pinbar">
         <button
           class="fp__pin"
@@ -84,19 +88,19 @@ function onPanelLeave() {
   display: flex;
   flex-direction: column;
   background: var(--ls-bg-panel);
-  border-right: 1px solid var(--ls-border);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--ls-border);
+  box-shadow: var(--ls-shadow-md);
   pointer-events: auto;
-  transition: transform 0.22s ease;
+  transition: transform 0.22s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .fp--left .fp__panel {
+  border-right: none;
   transform: translateX(calc(-100% - 12px));
 }
 
 .fp--right .fp__panel {
-  border-right: none;
-  border-left: 1px solid var(--ls-border);
+  border-left: none;
   transform: translateX(calc(100% + 12px));
 }
 
@@ -107,9 +111,9 @@ function onPanelLeave() {
 .fp__pinbar {
   display: flex;
   align-items: center;
-  height: 34px;
-  flex: 0 0 34px;
-  padding: 0 8px;
+  height: 38px;
+  flex: 0 0 38px;
+  padding: 0 10px;
   border-bottom: 1px solid var(--ls-border-subtle);
 }
 
@@ -124,10 +128,11 @@ function onPanelLeave() {
   width: 26px;
   height: 26px;
   border: 1px solid transparent;
-  border-radius: var(--ls-radius-sm);
+  border-radius: 8px;
   background: transparent;
   color: var(--ls-text-dim);
   cursor: pointer;
+  transition: color var(--ls-transition), background var(--ls-transition);
 }
 
 .fp__pin:hover {
@@ -138,6 +143,7 @@ function onPanelLeave() {
 .fp__pin--active {
   color: var(--ls-text);
   border-color: var(--ls-border);
+  background: var(--ls-bg-soft);
 }
 
 .fp__content {
@@ -149,5 +155,9 @@ function onPanelLeave() {
 .fp__content :deep(.panel) {
   border: none;
   height: 100%;
+}
+
+.fp__panel.liquid-glass :deep(.panel) {
+  background: transparent;
 }
 </style>

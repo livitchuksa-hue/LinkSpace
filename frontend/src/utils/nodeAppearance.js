@@ -19,7 +19,7 @@ const EXTENSION_GROUPS = {
   data: ['csv', 'xls', 'xlsx', 'ods', 'db', 'sqlite'],
 };
 
-const TYPE_APPEARANCE = {
+export const TYPE_APPEARANCE = {
   NOTE: { bg: '#e0e7ff', fg: '#3730a3', border: '#c7d2fe' },
   FOLDER: { bg: '#fef3c7', fg: '#92400e', border: '#fde68a' },
   LINK: { bg: '#dcfce7', fg: '#166534', border: '#86efac' },
@@ -74,6 +74,38 @@ export function isImageNode(node) {
   if (node?.type !== 'FILE') return false;
   const extension = fileExtension(node.path || node.title);
   return EXTENSION_GROUPS.image.includes(extension);
+}
+
+function hexToRgb(hex) {
+  const normalized = normalizeHex(hex);
+  if (!normalized) return null;
+  return [
+    parseInt(normalized.slice(1, 3), 16),
+    parseInt(normalized.slice(3, 5), 16),
+    parseInt(normalized.slice(5, 7), 16),
+  ];
+}
+
+/**
+ * Приглушённый «soft»-вариант цвета для тёмной темы:
+ * полупрозрачная подложка, осветлённый текст, тонкая рамка.
+ */
+export function softTone(hex) {
+  const rgb = hexToRgb(hex);
+  if (!rgb) {
+    return {
+      bg: 'rgba(255, 255, 255, 0.07)',
+      fg: '#d6d6d6',
+      border: 'rgba(255, 255, 255, 0.16)',
+    };
+  }
+  const [r, g, b] = rgb;
+  const mix = (channel) => Math.round(channel + (255 - channel) * 0.62);
+  return {
+    bg: `rgba(${r}, ${g}, ${b}, 0.15)`,
+    fg: `rgb(${mix(r)}, ${mix(g)}, ${mix(b)})`,
+    border: `rgba(${r}, ${g}, ${b}, 0.4)`,
+  };
 }
 
 export function nodeAppearance(node) {

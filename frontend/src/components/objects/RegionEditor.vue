@@ -185,8 +185,14 @@ function submit() {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  font-size: 0.88rem;
+  font-size: 0.8rem;
   color: var(--ls-text-muted);
+}
+
+.region-editor__field > span {
+  font-size: 0.72rem;
+  font-weight: 550;
+  color: var(--ls-text-dim);
 }
 
 .region-editor__field input[type='text'],
@@ -195,8 +201,21 @@ function submit() {
   border: 1px solid var(--ls-border);
   background: var(--ls-bg);
   border-radius: var(--ls-radius-sm);
-  padding: 8px 10px;
+  padding: 7px 10px;
+  min-height: var(--ls-control-h);
   color: var(--ls-text);
+  font-size: 0.85rem;
+  transition: border-color var(--ls-transition);
+}
+
+.region-editor__field select {
+  color-scheme: dark;
+}
+
+.region-editor__field input:focus,
+.region-editor__field select:focus {
+  border-color: var(--ls-text-dim);
+  outline: none;
 }
 
 .region-editor__points {
@@ -248,7 +267,7 @@ function submit() {
 
 .region-editor__picker {
   width: 54px;
-  height: 40px;
+  height: var(--ls-control-h);
   padding: 4px;
   border: 1px solid var(--ls-border);
   border-radius: var(--ls-radius-sm);
@@ -259,13 +278,15 @@ function submit() {
 .region-editor__hint {
   margin: 0;
   color: var(--ls-text-dim);
-  font-size: 0.78rem;
+  font-size: 0.72rem;
+  line-height: 1.45;
 }
 
 .region-editor__error {
   margin: 0;
-  color: var(--ls-danger);
-  font-size: 0.85rem;
+  color: var(--ls-text);
+  font-size: 0.8rem;
+  font-weight: 550;
 }
 
 .region-editor__actions {

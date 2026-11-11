@@ -21,11 +21,13 @@ defineProps({
 <style scoped>
 .base-btn {
   border: 1px solid transparent;
-  border-radius: 10px;
-  padding: 8px 14px;
+  border-radius: var(--ls-radius-sm);
+  padding: 6px 12px;
+  min-height: var(--ls-control-h);
   font-weight: 600;
-  font-size: 0.85rem;
-  transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+  font-size: 0.8rem;
+  letter-spacing: 0.01em;
+  transition: background var(--ls-transition), border-color var(--ls-transition), opacity var(--ls-transition);
 }
 
 .base-btn:disabled {
@@ -43,17 +45,29 @@ defineProps({
 }
 
 .base-btn--primary:hover:not(:disabled) {
-  background: #e8e8e8;
+  background: #e0e0e0;
 }
 
 .base-btn--ghost {
   background: transparent;
-  border-color: #2c2c2c;
+  border-color: var(--ls-border);
   color: var(--ls-text);
 }
 
 .base-btn--ghost:hover:not(:disabled) {
-  background: #161616;
+  background: var(--ls-bg-soft);
+  border-color: #3d3d3d;
+}
+
+.base-btn--danger {
+  background: transparent;
+  border-color: var(--ls-danger-border);
+  color: var(--ls-danger);
+}
+
+.base-btn--danger:hover:not(:disabled) {
+  background: var(--ls-danger-soft);
+  border-color: var(--ls-danger);
 }
 
 .base-btn--active {

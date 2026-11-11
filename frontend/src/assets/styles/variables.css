@@ -1,39 +1,51 @@
 :root {
   --ls-bg: #0a0a0a;
-  --ls-bg-elevated: #111111;
-  --ls-bg-panel: #0e0e0e;
-  --ls-bg-soft: #171717;
-  --ls-border: #2a2a2a;
-  --ls-border-subtle: #1c1c1c;
+  --ls-bg-elevated: #131313;
+  --ls-bg-panel: #0f0f0f;
+  --ls-bg-soft: #191919;
+  --ls-bg-hover: #202020;
+  --ls-border: #2b2b2b;
+  --ls-border-subtle: #1e1e1e;
   --ls-node: #141414;
   --ls-node-selected: #1d1d1d;
 
-  --ls-text: #f2f2f2;
+  --ls-text: #f4f4f4;
   --ls-text-muted: #a3a3a3;
   --ls-text-dim: #6e6e6e;
+  --ls-text-faint: #4d4d4d;
 
   --ls-accent: #ffffff;
   --ls-accent-hover: #d6d6d6;
   --ls-accent-soft: rgba(255, 255, 255, 0.08);
   --ls-success: #d0d0d0;
-  --ls-danger: #cfcfcf;
+  --ls-danger: #e0655f;
+  --ls-danger-soft: rgba(224, 101, 95, 0.14);
+  --ls-danger-border: rgba(224, 101, 95, 0.42);
+
+  --ls-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --ls-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --ls-shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.5);
+
+  --ls-transition: 140ms ease;
 
   --ls-space-1: 4px;
   --ls-space-2: 8px;
   --ls-space-3: 12px;
   --ls-space-4: 16px;
-  --ls-space-5: 24px;
-  --ls-space-6: 32px;
-  --ls-space-7: 48px;
+  --ls-space-5: 20px;
+  --ls-space-6: 28px;
+  --ls-space-7: 40px;
 
-  --ls-radius-sm: 8px;
-  --ls-radius-md: 12px;
-  --ls-radius-lg: 16px;
+  --ls-radius-sm: 6px;
+  --ls-radius-md: 8px;
+  --ls-radius-lg: 12px;
 
-  --ls-header-height: 52px;
-  --ls-sidebar-width: 240px;
+  --ls-control-h: 30px;
+
+  --ls-header-height: 46px;
+  --ls-sidebar-width: 248px;
   --ls-inspector-width: 300px;
 
-  --ls-font: "Segoe UI", "Candara", "Trebuchet MS", sans-serif;
-  --ls-font-display: "Segoe UI Semibold", "Segoe UI", sans-serif;
+  --ls-font: "Segoe UI Variable Text", "Segoe UI", "Candara", "Trebuchet MS", sans-serif;
+  --ls-font-display: "Segoe UI Semibold", "Segoe UI Variable Text", "Segoe UI", sans-serif;
 }

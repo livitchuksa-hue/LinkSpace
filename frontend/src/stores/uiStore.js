@@ -25,6 +25,9 @@ export const uiStore = reactive({
   regionToolShape: 'polygon',
   pendingEdit: null,
   pendingDelete: null,
+  selectedObjectIds: [],
+  cardFieldOverrides: {},
+  liquidGlass: true,
   filter: createDefaultFilter(),
   graphFields: {
     title: true,
@@ -49,9 +52,17 @@ export function useUiStore() {
     uiStore.selectedObjectId = id;
     uiStore.selectedConnectionId = null;
     uiStore.selectedRegionId = null;
+    uiStore.selectedObjectIds = [];
     if (uiStore.tool !== 'connect') {
       uiStore.connectSourceId = null;
     }
+  }
+
+  function toggleMultiSelect(id) {
+    const ids = uiStore.selectedObjectIds;
+    uiStore.selectedObjectIds = ids.includes(id)
+      ? ids.filter((item) => item !== id)
+      : [...ids, id];
   }
 
   function selectConnection(id) {
@@ -72,6 +83,7 @@ export function useUiStore() {
     uiStore.selectedObjectId = null;
     uiStore.selectedConnectionId = null;
     uiStore.selectedRegionId = null;
+    uiStore.selectedObjectIds = [];
     uiStore.connectSourceId = null;
   }
 
@@ -91,6 +103,7 @@ export function useUiStore() {
     selectConnection,
     selectRegion,
     clearSelection,
+    toggleMultiSelect,
     setTool,
     setStatus,
   };

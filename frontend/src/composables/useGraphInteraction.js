@@ -83,6 +83,8 @@ export function useGraphInteraction({ onMoveEnd, onResizeEnd, onRegionComplete, 
     startBBox: { minX: 0, minY: 0, width: 0, height: 0 },
     regionPoints: [],
     regionShape: 'polygon',
+    dragGroup: [],
+    resizeGroup: [],
     moved: false,
     panTrail: [],
     inertiaRaf: null,
@@ -155,7 +157,27 @@ export function useGraphInteraction({ onMoveEnd, onResizeEnd, onRegionComplete, 
     interaction.nodeId = node.id;
     interaction.startClient = { x: event.clientX, y: event.clientY };
     interaction.startNode = { x: node.x || 0, y: node.y || 0 };
+    interaction.dragGroup = multiDragGroup(node.id, 'position');
     interaction.moved = false;
+  }
+
+  function multiDragGroup(nodeId, kind) {
+    const ids = uiStore.selectedObjectIds;
+    if (!Array.isArray(ids) || ids.length <= 1 || !ids.includes(nodeId)) return [];
+    return ids
+      .filter((id) => id !== nodeId)
+      .map((id) => {
+        const item = graphStore.objects.find((entry) => entry.id === id);
+        if (!item) return null;
+        return kind === 'position'
+          ? { id, x: item.x || 0, y: item.y || 0 }
+          : {
+              id,
+              width: Number(item.width) || 196,
+              height: Number(item.height) || 112,
+            };
+      })
+      .filter(Boolean);
   }
 
   function startNodeResize(event, node) {
@@ -170,6 +192,7 @@ export function useGraphInteraction({ onMoveEnd, onResizeEnd, onRegionComplete, 
       width: Number(node.width) || 196,
       height: Number(node.height) || 112,
     };
+    interaction.resizeGroup = multiDragGroup(node.id, 'size');
     interaction.moved = false;
   }
 
@@ -349,26 +372,44 @@ export function useGraphInteraction({ onMoveEnd, onResizeEnd, onRegionComplete, 
     }
 
     if (interaction.mode === 'drag-node') {
+      const worldDx = dx / graphStore.view.scale;
+      const worldDy = dy / graphStore.view.scale;
       const node = graphStore.objects.find((item) => item.id === interaction.nodeId);
       if (!node) return;
-      node.x = interaction.startNode.x + dx / graphStore.view.scale;
-      node.y = interaction.startNode.y + dy / graphStore.view.scale;
+      node.x = interaction.startNode.x + worldDx;
+      node.y = interaction.startNode.y + worldDy;
+      for (const member of interaction.dragGroup) {
+        const other = graphStore.objects.find((item) => item.id === member.id);
+        if (other) {
+          other.x = member.x + worldDx;
+          other.y = member.y + worldDy;
+        }
+      }
       return;
     }
 
     if (interaction.mode === 'resize-node') {
+      const worldDx = dx / graphStore.view.scale;
+      const worldDy = dy / graphStore.view.scale;
       const node = graphStore.objects.find((item) => item.id === interaction.nodeId);
       if (!node) return;
       node.width = clamp(
-        interaction.startSize.width + dx / graphStore.view.scale,
+        interaction.startSize.width + worldDx,
         MIN_NODE_WIDTH,
         MAX_NODE_WIDTH
       );
       node.height = clamp(
-        interaction.startSize.height + dy / graphStore.view.scale,
+        interaction.startSize.height + worldDy,
         MIN_NODE_HEIGHT,
         MAX_NODE_HEIGHT
       );
+      for (const member of interaction.resizeGroup) {
+        const other = graphStore.objects.find((item) => item.id === member.id);
+        if (other) {
+          other.width = clamp(member.width + worldDx, MIN_NODE_WIDTH, MAX_NODE_WIDTH);
+          other.height = clamp(member.height + worldDy, MIN_NODE_HEIGHT, MAX_NODE_HEIGHT);
+        }
+      }
       return;
     }
 
@@ -443,6 +484,12 @@ export function useGraphInteraction({ onMoveEnd, onResizeEnd, onRegionComplete, 
       const node = graphStore.objects.find((item) => item.id === interaction.nodeId);
       if (node && onMoveEnd) {
         await onMoveEnd(node.id, node.x, node.y);
+        for (const member of interaction.dragGroup) {
+          const other = graphStore.objects.find((item) => item.id === member.id);
+          if (other && onMoveEnd) {
+            await onMoveEnd(other.id, other.x, other.y);
+          }
+        }
       }
     }
 
@@ -450,6 +497,12 @@ export function useGraphInteraction({ onMoveEnd, onResizeEnd, onRegionComplete, 
       const node = graphStore.objects.find((item) => item.id === interaction.nodeId);
       if (node) {
         await onResizeEnd(node.id, node.width, node.height);
+        for (const member of interaction.resizeGroup) {
+          const other = graphStore.objects.find((item) => item.id === member.id);
+          if (other) {
+            await onResizeEnd(other.id, other.width, other.height);
+          }
+        }
       }
     }
 
@@ -473,12 +526,14 @@ export function useGraphInteraction({ onMoveEnd, onResizeEnd, onRegionComplete, 
     if (interaction.mode === 'drag-node') {
       interaction.mode = null;
       interaction.nodeId = null;
+      interaction.dragGroup = [];
       interaction.moved = false;
     }
 
     if (interaction.mode === 'resize-node') {
       interaction.mode = null;
       interaction.nodeId = null;
+      interaction.resizeGroup = [];
       interaction.moved = false;
     }
 
